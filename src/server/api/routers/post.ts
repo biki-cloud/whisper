@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { type Prisma } from "@prisma/client";
 
 export const postRouter = createTRPCRouter({
   create: publicProcedure
@@ -11,12 +12,10 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // 24時間後の日時を計算
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
 
-      // 投稿を作成
-      const post = await ctx.db.post.create({
+      return ctx.db.post.create({
         data: {
           content: input.content,
           emotionTagId: input.emotionTagId,
@@ -27,18 +26,15 @@ export const postRouter = createTRPCRouter({
           empathies: true,
         },
       });
-
-      return post;
     }),
 
   getRandom: publicProcedure.query(async ({ ctx }) => {
     const now = new Date();
 
-    // 有効期限内の投稿をランダムに10件取得
     const posts = await ctx.db.post.findMany({
       where: {
         expiresAt: {
-          gt: now,
+          gte: now,
         },
       },
       include: {
@@ -51,7 +47,6 @@ export const postRouter = createTRPCRouter({
       take: 10,
     });
 
-    // 投稿をランダムにシャッフル
     return posts.sort(() => Math.random() - 0.5);
   }),
 
@@ -69,12 +64,10 @@ export const postRouter = createTRPCRouter({
         });
       }
 
-      const empathy = await ctx.db.empathy.create({
+      return ctx.db.empathy.create({
         data: {
           postId: input.postId,
         },
       });
-
-      return empathy;
     }),
 });
