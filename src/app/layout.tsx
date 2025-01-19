@@ -1,12 +1,19 @@
 import "~/styles/globals.css";
 
-import { GeistSans } from "geist/font/sans";
-import { TRPCProvider } from "./providers";
-import { type Metadata } from "next";
+import { Inter } from "next/font/google";
+import { headers } from "next/headers";
 
-export const metadata: Metadata = {
+import { TRPCReactProvider } from "~/trpc/react";
+import { Navbar } from "~/components/Navbar";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+export const metadata = {
   title: "Whisper - 想いを綴る場所",
-  description: "匿名で想いを綴る場所",
+  description: "今日の想いを共有しよう",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
@@ -17,8 +24,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={`font-sans ${GeistSans.variable}`}>
-        <TRPCProvider>{children}</TRPCProvider>
+      <body
+        className={`font-sans ${inter.variable} bg-gray-50 dark:bg-gray-900`}
+      >
+        <TRPCReactProvider headers={headers()}>
+          <Navbar />
+          {children}
+        </TRPCReactProvider>
       </body>
     </html>
   );

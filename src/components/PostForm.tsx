@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { api } from "~/utils/api";
 import { type EmotionTag } from "~/types/api";
+import { useRouter } from "next/navigation";
 
 export function PostForm() {
   const [content, setContent] = useState("");
   const [selectedEmotionTagId, setSelectedEmotionTagId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const utils = api.useContext();
   const { data: emotionTags } = api.emotionTag.getAll.useQuery();
@@ -17,6 +19,7 @@ export function PostForm() {
       setSelectedEmotionTagId("");
       setError(null);
       void utils.post.getLatest.invalidate();
+      router.push("/");
     },
     onError: (error) => {
       if (error.data?.code === "FORBIDDEN") {
