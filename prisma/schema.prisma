@@ -18,9 +18,11 @@ model Post {
     emotionTag EmotionTag @relation(fields: [emotionTagId], references: [id])
     emotionTagId String
     empathies Empathy[]
+    ipAddress String   @default("127.0.0.1") // ユーザーのIPアドレスを保存
 
     @@index([createdAt])
     @@index([expiresAt])
+    @@index([ipAddress])
 }
 
 model EmotionTag {
