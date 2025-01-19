@@ -1,14 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { api } from "~/utils/api";
 import { type Post } from "~/types/api";
 
 export function PostList() {
   const utils = api.useContext();
-  const { data: posts, isLoading } = api.post.getLatest.useQuery();
+  const [emotionTagId, setEmotionTagId] = useState<string | undefined>();
+  const [orderBy, setOrderBy] = useState<"desc" | "asc">("desc");
+
+  const { data, isLoading, fetchNextPage, hasNextPage } =
+    api.post.getAll.useInfiniteQuery(
+      {
+        limit: 10,
+        emotionTagId,
+        orderBy,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+      },
+    );
+
   const addEmpathy = api.post.addEmpathy.useMutation({
     onSuccess: () => {
-      void utils.post.getLatest.invalidate();
+      void utils.post.getAll.invalidate();
     },
   });
 
@@ -20,7 +35,9 @@ export function PostList() {
     );
   }
 
-  if (!posts?.length) {
+  const posts = data?.pages.flatMap((page) => page.items) ?? [];
+
+  if (!posts.length) {
     return (
       <div className="py-8 text-center text-gray-500 dark:text-gray-400">
         投稿がありません
@@ -30,6 +47,16 @@ export function PostList() {
 
   return (
     <div className="space-y-4">
+      <div className="flex gap-4 p-4">
+        <select
+          value={orderBy}
+          onChange={(e) => setOrderBy(e.target.value as "desc" | "asc")}
+          className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+        >
+          <option value="desc">新しい順</option>
+          <option value="asc">古い順</option>
+        </select>
+      </div>
       {posts.map((post: Post) => (
         <div
           key={post.id}
@@ -39,9 +66,12 @@ export function PostList() {
             {post.content}
           </p>
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            <button
+              onClick={() => setEmotionTagId(post.emotionTag.id)}
+              className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+            >
               {post.emotionTag.name}
-            </span>
+            </button>
             <button
               onClick={() => addEmpathy.mutate({ postId: post.id })}
               className="inline-flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
@@ -65,6 +95,16 @@ export function PostList() {
           </div>
         </div>
       ))}
+      {hasNextPage && (
+        <div className="flex justify-center py-4">
+          <button
+            onClick={() => void fetchNextPage()}
+            className="rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-600"
+          >
+            もっと見る
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -62,30 +62,61 @@ export const postRouter = createTRPCRouter({
       return post;
     }),
 
-  getLatest: publicProcedure.query(async ({ ctx }) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  getAll: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(50).default(10),
+        cursor: z.string().nullish(),
+        emotionTagId: z.string().optional(),
+        orderBy: z.enum(["desc", "asc"]).default("desc"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { limit, cursor, emotionTagId, orderBy } = input;
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+      const where: Prisma.PostWhereInput = {};
 
-    return ctx.db.post.findMany({
-      where: {
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
+      // 感情タグでフィルター
+      if (emotionTagId) {
+        where.emotionTagId = emotionTagId;
+      }
+
+      // 今日の投稿のみを取得
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      where.createdAt = {
+        gte: today,
+        lt: tomorrow,
+      };
+
+      // カーソルベースのページネーション
+      const items = await ctx.db.post.findMany({
+        take: limit + 1,
+        where,
+        cursor: cursor ? { id: cursor } : undefined,
+        include: {
+          emotionTag: true,
+          empathies: true,
         },
-      },
-      include: {
-        emotionTag: true,
-        empathies: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 10,
-    });
-  }),
+        orderBy: {
+          createdAt: orderBy,
+        },
+      });
+
+      let nextCursor: typeof cursor = undefined;
+      if (items.length > limit) {
+        const nextItem = items.pop();
+        nextCursor = nextItem!.id;
+      }
+
+      return {
+        items,
+        nextCursor,
+      };
+    }),
 
   addEmpathy: publicProcedure
     .input(z.object({ postId: z.string() }))
