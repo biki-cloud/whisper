@@ -46,15 +46,11 @@ export const postRouter = createTRPCRouter({
         });
       }
 
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 24);
-
       // 投稿を作成
       const post = await ctx.db.post.create({
         data: {
           content: input.content,
           emotionTagId: input.emotionTagId,
-          expiresAt,
           ipAddress: ctx.ip,
         },
         include: {
@@ -67,12 +63,17 @@ export const postRouter = createTRPCRouter({
     }),
 
   getLatest: publicProcedure.query(async ({ ctx }) => {
-    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
     return ctx.db.post.findMany({
       where: {
-        expiresAt: {
-          gte: now,
+        createdAt: {
+          gte: today,
+          lt: tomorrow,
         },
       },
       include: {
@@ -91,6 +92,10 @@ export const postRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const post = await ctx.db.post.findUnique({
         where: { id: input.postId },
+        include: {
+          emotionTag: true,
+          empathies: true,
+        },
       });
 
       if (!post) {
@@ -100,7 +105,7 @@ export const postRouter = createTRPCRouter({
         });
       }
 
-      const empathy = await ctx.db.empathy.create({
+      await ctx.db.empathy.create({
         data: {
           postId: input.postId,
         },
