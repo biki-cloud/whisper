@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Whisper - 想いを綴る場所",
+  title: "Vent - 想いを綴る場所",
   description: "今日の想いを共有しよう",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };

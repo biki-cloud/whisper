@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import VentLogo from "./VentLogo";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -15,11 +16,8 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <Link
-              href="/"
-              className="text-xl font-bold text-gray-900 dark:text-white"
-            >
-              Whisper
+            <Link href="/" className="flex items-center">
+              <VentLogo width={100} height={50} />
             </Link>
           </div>
           <div className="flex items-center space-x-4">
