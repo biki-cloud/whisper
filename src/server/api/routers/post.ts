@@ -1,31 +1,80 @@
 import { z } from "zod";
-
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
 
 export const postRouter = createTRPCRouter({
-  hello: publicProcedure
-    .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.text}`,
-      };
-    }),
-
   create: publicProcedure
-    .input(z.object({ name: z.string().min(1) }))
+    .input(
+      z.object({
+        content: z.string().min(1).max(500),
+        emotionTagId: z.string(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.post.create({
+      // 24時間後の日時を計算
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+
+      // 投稿を作成
+      const post = await ctx.db.post.create({
         data: {
-          name: input.name,
+          content: input.content,
+          emotionTagId: input.emotionTagId,
+          expiresAt,
+        },
+        include: {
+          emotionTag: true,
+          empathies: true,
         },
       });
+
+      return post;
     }),
 
-  getLatest: publicProcedure.query(async ({ ctx }) => {
-    const post = await ctx.db.post.findFirst({
-      orderBy: { createdAt: "desc" },
+  getRandom: publicProcedure.query(async ({ ctx }) => {
+    const now = new Date();
+
+    // 有効期限内の投稿をランダムに10件取得
+    const posts = await ctx.db.post.findMany({
+      where: {
+        expiresAt: {
+          gt: now,
+        },
+      },
+      include: {
+        emotionTag: true,
+        empathies: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 10,
     });
 
-    return post ?? null;
+    // 投稿をランダムにシャッフル
+    return posts.sort(() => Math.random() - 0.5);
   }),
+
+  addEmpathy: publicProcedure
+    .input(z.object({ postId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const post = await ctx.db.post.findUnique({
+        where: { id: input.postId },
+      });
+
+      if (!post) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Post not found",
+        });
+      }
+
+      const empathy = await ctx.db.empathy.create({
+        data: {
+          postId: input.postId,
+        },
+      });
+
+      return empathy;
+    }),
 });
