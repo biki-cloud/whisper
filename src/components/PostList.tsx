@@ -4,8 +4,13 @@ import { api } from "~/utils/api";
 import { type Post } from "~/types/api";
 
 export function PostList() {
-  const { data: posts, isLoading } = api.post.getRandom.useQuery();
-  const addEmpathy = api.post.addEmpathy.useMutation();
+  const utils = api.useContext();
+  const { data: posts, isLoading } = api.post.getLatest.useQuery();
+  const addEmpathy = api.post.addEmpathy.useMutation({
+    onSuccess: () => {
+      void utils.post.getLatest.invalidate();
+    },
+  });
 
   if (isLoading) {
     return (

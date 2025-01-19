@@ -8,11 +8,13 @@ export function PostForm() {
   const [content, setContent] = useState("");
   const [selectedEmotionTagId, setSelectedEmotionTagId] = useState("");
 
+  const utils = api.useContext();
   const { data: emotionTags } = api.emotionTag.getAll.useQuery();
   const createPost = api.post.create.useMutation({
     onSuccess: () => {
       setContent("");
       setSelectedEmotionTagId("");
+      void utils.post.getLatest.invalidate();
     },
   });
 

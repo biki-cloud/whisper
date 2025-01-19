@@ -28,10 +28,10 @@ export const postRouter = createTRPCRouter({
       });
     }),
 
-  getRandom: publicProcedure.query(async ({ ctx }) => {
+  getLatest: publicProcedure.query(async ({ ctx }) => {
     const now = new Date();
 
-    const posts = await ctx.db.post.findMany({
+    return ctx.db.post.findMany({
       where: {
         expiresAt: {
           gte: now,
@@ -46,8 +46,6 @@ export const postRouter = createTRPCRouter({
       },
       take: 10,
     });
-
-    return posts.sort(() => Math.random() - 0.5);
   }),
 
   addEmpathy: publicProcedure
