@@ -65,6 +65,12 @@ export function PostList() {
           <p className="mb-2 text-gray-900 dark:text-gray-100">
             {post.content}
           </p>
+          <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+            {new Date(post.createdAt).toLocaleTimeString("ja-JP", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
           <div className="flex items-center justify-between">
             <button
               onClick={() => setEmotionTagId(post.emotionTag.id)}
