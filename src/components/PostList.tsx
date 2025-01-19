@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "~/utils/api";
 import { type Post } from "~/types/api";
+import { getEmotionEmoji } from "~/utils/emotions";
 
 export function PostList() {
   const utils = api.useContext();
@@ -74,9 +75,14 @@ export function PostList() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => setEmotionTagId(post.emotionTag.id)}
-              className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium dark:bg-opacity-20 ${
+                getEmotionEmoji(post.emotionTag.id).color
+              }`}
             >
-              {post.emotionTag.name}
+              <span className="text-base">
+                {getEmotionEmoji(post.emotionTag.id).emoji}
+              </span>
+              <span>{getEmotionEmoji(post.emotionTag.id).label}</span>
             </button>
             <button
               onClick={() => addEmpathy.mutate({ postId: post.id })}
