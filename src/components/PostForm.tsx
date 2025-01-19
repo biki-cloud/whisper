@@ -7,6 +7,7 @@ import { type EmotionTag } from "~/types/api";
 export function PostForm() {
   const [content, setContent] = useState("");
   const [selectedEmotionTagId, setSelectedEmotionTagId] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const utils = api.useContext();
   const { data: emotionTags } = api.emotionTag.getAll.useQuery();
@@ -14,7 +15,15 @@ export function PostForm() {
     onSuccess: () => {
       setContent("");
       setSelectedEmotionTagId("");
+      setError(null);
       void utils.post.getLatest.invalidate();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN") {
+        setError("1日1回までしか投稿できません。");
+      } else {
+        setError("投稿に失敗しました。もう一度お試しください。");
+      }
     },
   });
 
@@ -70,12 +79,35 @@ export function PostForm() {
         </select>
       </div>
 
+      {error && (
+        <div className="rounded-md bg-red-50 p-4 dark:bg-red-900">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-red-400 dark:text-red-300"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
         type="submit"
-        disabled={!content || !selectedEmotionTagId || createPost.isLoading}
+        disabled={!content || !selectedEmotionTagId || createPost.isPending}
         className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
       >
-        {createPost.isLoading ? "投稿中..." : "投稿する"}
+        {createPost.isPending ? "投稿中..." : "投稿する"}
       </button>
     </form>
   );
