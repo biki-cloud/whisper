@@ -50,6 +50,18 @@ export function PostList() {
     <div className="space-y-4">
       <div className="flex gap-4 p-4">
         <select
+          value={emotionTagId ?? ""}
+          onChange={(e) => setEmotionTagId(e.target.value || undefined)}
+          className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+        >
+          <option value="">すべての感情</option>
+          <option value="clh1234567890">😠 怒り</option>
+          <option value="clh1234567891">😢 悲しみ</option>
+          <option value="clh1234567892">😰 不安</option>
+          <option value="clh1234567893">😊 喜び</option>
+          <option value="clh1234567894">😔 落ち込み</option>
+        </select>
+        <select
           value={orderBy}
           onChange={(e) => setOrderBy(e.target.value as "desc" | "asc")}
           className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
