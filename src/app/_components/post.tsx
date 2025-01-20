@@ -5,38 +5,34 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 
 export function LatestPost() {
-  const [latestPost] = api.post.getLatest.useSuspenseQuery();
-
   const utils = api.useUtils();
-  const [name, setName] = useState("");
+  const [content, setContent] = useState("");
+  const [emotionTagId, setEmotionTagId] = useState("1"); // 適切なデフォルト値を設定
+
   const createPost = api.post.create.useMutation({
     onSuccess: async () => {
       await utils.post.invalidate();
-      setName("");
+      setContent("");
     },
   });
 
   return (
     <div className="w-full max-w-xs">
-      {latestPost ? (
-        <p className="truncate">Your most recent post: {latestPost.name}</p>
-      ) : (
-        <p>You have no posts yet.</p>
-      )}
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          createPost.mutate({ name });
+          createPost.mutate({ content, emotionTagId });
         }}
         className="flex flex-col gap-2"
       >
         <input
           type="text"
-          placeholder="Title"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          placeholder="Content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
           className="w-full rounded-full px-4 py-2 text-black"
         />
+        {/* 必要に応じて emotionTagId の入力フィールドを追加 */}
         <button
           type="submit"
           className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"

@@ -24,8 +24,13 @@ import { db } from "~/server/db";
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const forwarded = opts.headers?.get("x-forwarded-for");
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const createTRPCContext = async (opts: { headers: any }) => {
+  const forwarded = opts.headers.get("x-forwarded-for");
   const ip = forwarded ? forwarded.split(",")[0].trim() : "127.0.0.1";
 
   return {

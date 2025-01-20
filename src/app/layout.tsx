@@ -27,7 +27,7 @@ export default function RootLayout({
       <body
         className={`font-sans ${inter.variable} bg-gray-50 dark:bg-gray-900`}
       >
-        <TRPCReactProvider headers={headers()}>
+        <TRPCReactProvider>
           <Navbar />
           {children}
         </TRPCReactProvider>

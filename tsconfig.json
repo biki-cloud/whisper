@@ -27,7 +27,9 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"]
-    }
+    },
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "allowImportingTsExtensions": true
   },
   "include": [
     ".eslintrc.cjs",
