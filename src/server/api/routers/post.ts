@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { type Prisma, type Post } from "@prisma/client";
-import { randomUUID } from "crypto";
+import { type Prisma } from "@prisma/client";
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */

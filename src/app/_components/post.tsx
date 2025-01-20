@@ -32,7 +32,15 @@ export function LatestPost() {
           onChange={(e) => setContent(e.target.value)}
           className="w-full rounded-full px-4 py-2 text-black"
         />
-        {/* 必要に応じて emotionTagId の入力フィールドを追加 */}
+        <select
+          value={emotionTagId}
+          onChange={(e) => setEmotionTagId(e.target.value)}
+          className="w-full rounded-full px-4 py-2 text-black"
+        >
+          <option value="1">Happy</option>
+          <option value="2">Sad</option>
+          <option value="3">Angry</option>
+        </select>
         <button
           type="submit"
           className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
