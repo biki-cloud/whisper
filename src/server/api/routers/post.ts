@@ -59,7 +59,7 @@ export const postRouter = createTRPCRouter({
         },
         include: {
           emotionTag: true,
-          empathies: true,
+          stamps: true,
         },
       });
 
@@ -103,7 +103,6 @@ export const postRouter = createTRPCRouter({
         cursor: cursor ? { id: cursor } : undefined,
         include: {
           emotionTag: true,
-          empathies: true,
           stamps: true,
         },
         orderBy: {
@@ -123,49 +122,11 @@ export const postRouter = createTRPCRouter({
       };
     }),
 
-  addEmpathy: publicProcedure
-    .input(z.object({ postId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const post = await ctx.db.post.findUnique({
-        where: { id: input.postId },
-        include: {
-          emotionTag: true,
-          empathies: true,
-        },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Post not found",
-        });
-      }
-
-      await ctx.db.empathy.create({
-        data: {
-          postId: input.postId,
-        },
-      });
-
-      return post;
-    }),
-
-  getLatest: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.post.findMany({
-      include: {
-        emotionTag: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  }),
-
   addStamp: publicProcedure
     .input(
       z.object({
         postId: z.string(),
-        type: z.enum(["thanks"]), // 現在は"ありがとう"スタンプのみ
+        type: z.enum(["thanks", "empathy"]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -174,7 +135,6 @@ export const postRouter = createTRPCRouter({
         where: { id: input.postId },
         include: {
           emotionTag: true,
-          empathies: true,
           stamps: true,
         },
       });
@@ -216,7 +176,6 @@ export const postRouter = createTRPCRouter({
         where: { id: input.postId },
         include: {
           emotionTag: true,
-          empathies: true,
           stamps: true,
         },
       });
@@ -230,4 +189,16 @@ export const postRouter = createTRPCRouter({
 
       return updatedPost;
     }),
+
+  getLatest: publicProcedure.query(async ({ ctx }) => {
+    return ctx.db.post.findMany({
+      include: {
+        emotionTag: true,
+        stamps: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }),
 });

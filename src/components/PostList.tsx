@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { api } from "~/utils/api";
-import { type Post, type RouterOutputs } from "~/types/api";
+import { type RouterOutputs } from "~/types/api";
 import { getEmotionEmoji } from "~/utils/emotions";
+
+type Post = RouterOutputs["post"]["getAll"]["items"][number];
 
 export function PostList() {
   const utils = api.useContext();
@@ -21,12 +23,6 @@ export function PostList() {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
       },
     );
-
-  const addEmpathy = api.post.addEmpathy.useMutation({
-    onSuccess: () => {
-      void utils.post.getAll.invalidate();
-    },
-  });
 
   const addStamp = api.post.addStamp.useMutation({
     onSuccess: () => {
@@ -76,7 +72,7 @@ export function PostList() {
           <option value="asc">古い順</option>
         </select>
       </div>
-      {(posts as Post[]).map((post) => (
+      {posts.map((post) => (
         <div
           key={post.id}
           className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
@@ -92,7 +88,7 @@ export function PostList() {
           </p>
           <div className="flex items-center justify-between">
             <button
-              onClick={() => setEmotionTagId(post.emotionTag?.id as string)}
+              onClick={() => setEmotionTagId(post.emotionTag.id)}
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium dark:bg-opacity-20 ${
                 getEmotionEmoji(post.emotionTag.id, post.emotionTag.name).color
               }`}
@@ -120,13 +116,16 @@ export function PostList() {
               >
                 <span className="text-xl">🙏</span>
                 <span>
-                  {post.stamps?.filter((stamp) => stamp.type === "thanks")
+                  {post.stamps.filter((stamp) => stamp.type === "thanks")
                     .length ?? 0}
                 </span>
               </button>
               <button
-                onClick={() => addEmpathy.mutate({ postId: post.id })}
+                onClick={() =>
+                  addStamp.mutate({ postId: post.id, type: "empathy" })
+                }
                 className="inline-flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                disabled={addStamp.isPending}
               >
                 <svg
                   className="h-5 w-5"
@@ -142,7 +141,10 @@ export function PostList() {
                     d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                   />
                 </svg>
-                <span>{post.empathies.length}</span>
+                <span>
+                  {post.stamps.filter((stamp) => stamp.type === "empathy")
+                    .length ?? 0}
+                </span>
               </button>
             </div>
           </div>

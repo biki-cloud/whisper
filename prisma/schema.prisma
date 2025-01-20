@@ -17,7 +17,6 @@ model Post {
     createdAt DateTime @default(now())
     emotionTag EmotionTag @relation(fields: [emotionTagId], references: [id])
     emotionTagId String
-    empathies Empathy[]
     stamps    Stamp[]
     ipAddress String   @default("127.0.0.1") // ユーザーのIPアドレスを保存
 
@@ -31,18 +30,9 @@ model EmotionTag {
     posts Post[]
 }
 
-model Empathy {
-    id        String   @id @default(cuid())
-    post      Post     @relation(fields: [postId], references: [id])
-    postId    String
-    createdAt DateTime @default(now())
-
-    @@index([postId])
-}
-
 model Stamp {
     id        String   @id @default(cuid())
-    type      String   // "thanks"など、スタンプの種類
+    type      String   // "thanks" または "empathy"
     post      Post     @relation(fields: [postId], references: [id])
     postId    String
     createdAt DateTime @default(now())
