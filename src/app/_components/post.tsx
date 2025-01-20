@@ -7,7 +7,7 @@ import { api } from "~/trpc/react";
 export function LatestPost() {
   const utils = api.useUtils();
   const [content, setContent] = useState("");
-  const [emotionTagId] = useState("1"); // 適切なデフォルト値を設定
+  const [emotionTagId, setEmotionTagId] = useState("1"); // 適切なデフォルト値を設定
 
   const createPost = api.post.create.useMutation({
     onSuccess: async () => {

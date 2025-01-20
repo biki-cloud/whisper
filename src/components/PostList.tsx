@@ -88,13 +88,21 @@ export function PostList() {
             <button
               onClick={() => setEmotionTagId(post.emotionTag.id)}
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium dark:bg-opacity-20 ${
-                getEmotionEmoji(post.emotionTag.id).color
+                getEmotionEmoji(post.emotionTag.id, post.emotionTag.name).color
               }`}
             >
               <span className="text-base">
-                {getEmotionEmoji(post.emotionTag.id).emoji}
+                {
+                  getEmotionEmoji(post.emotionTag.id, post.emotionTag.name)
+                    .emoji
+                }
               </span>
-              <span>{getEmotionEmoji(post.emotionTag.id).label}</span>
+              <span>
+                {
+                  getEmotionEmoji(post.emotionTag.id, post.emotionTag.name)
+                    .label
+                }
+              </span>
             </button>
             <button
               onClick={() => addEmpathy.mutate({ postId: post.id })}
