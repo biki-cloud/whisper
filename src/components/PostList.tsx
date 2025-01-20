@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "~/utils/api";
 import { type RouterOutputs } from "~/types/api";
 import { getEmotionEmoji } from "~/utils/emotions";
+import { type StampType } from "@prisma/client";
 
 type Post = RouterOutputs["post"]["getAll"]["items"][number];
 
@@ -29,6 +30,8 @@ export function PostList() {
       void utils.post.getAll.invalidate();
     },
   });
+
+  const { data: clientIp } = api.post.getClientIp.useQuery();
 
   if (isLoading) {
     return (
@@ -111,8 +114,21 @@ export function PostList() {
                 onClick={() =>
                   addStamp.mutate({ postId: post.id, type: "thanks" })
                 }
-                className="inline-flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                disabled={addStamp.isPending}
+                className={`inline-flex items-center space-x-1 ${
+                  post.stamps.some(
+                    (stamp) =>
+                      stamp.type === "thanks" && stamp.ipAddress === clientIp,
+                  )
+                    ? "cursor-not-allowed bg-blue-500 text-white"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                }`}
+                disabled={
+                  addStamp.isPending ||
+                  post.stamps.some(
+                    (stamp) =>
+                      stamp.type === "thanks" && stamp.ipAddress === clientIp,
+                  )
+                }
               >
                 <span className="text-xl">🙏</span>
                 <span>
@@ -124,8 +140,21 @@ export function PostList() {
                 onClick={() =>
                   addStamp.mutate({ postId: post.id, type: "empathy" })
                 }
-                className="inline-flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                disabled={addStamp.isPending}
+                className={`inline-flex items-center space-x-1 ${
+                  post.stamps.some(
+                    (stamp) =>
+                      stamp.type === "empathy" && stamp.ipAddress === clientIp,
+                  )
+                    ? "cursor-not-allowed bg-blue-500 text-white"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                }`}
+                disabled={
+                  addStamp.isPending ||
+                  post.stamps.some(
+                    (stamp) =>
+                      stamp.type === "empathy" && stamp.ipAddress === clientIp,
+                  )
+                }
               >
                 <svg
                   className="h-5 w-5"

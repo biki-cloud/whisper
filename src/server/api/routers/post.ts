@@ -201,4 +201,8 @@ export const postRouter = createTRPCRouter({
       },
     });
   }),
+
+  getClientIp: publicProcedure.query(({ ctx }) => {
+    return ctx.ip;
+  }),
 });

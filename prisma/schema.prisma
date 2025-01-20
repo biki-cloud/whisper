@@ -32,7 +32,7 @@ model EmotionTag {
 
 model Stamp {
     id        String   @id @default(cuid())
-    type      String   // "thanks" または "empathy"
+    type      StampType // "thanks" または "empathy"
     post      Post     @relation(fields: [postId], references: [id])
     postId    String
     createdAt DateTime @default(now())
@@ -40,4 +40,9 @@ model Stamp {
 
     @@index([postId])
     @@index([ipAddress])
+}
+
+enum StampType {
+    thanks
+    empathy
 }
