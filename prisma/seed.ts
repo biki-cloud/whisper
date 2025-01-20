@@ -1,30 +1,63 @@
 import { PrismaClient } from "@prisma/client";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 
 const prisma = new PrismaClient();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 async function main() {
-  try {
-    const sqlFile = readFileSync(join(__dirname, "seed.sql"), "utf8");
-    const statements = sqlFile
-      .split(";")
-      .filter((statement) => statement.trim());
+  // 感情タグのデータを作成
+  const emotionTags = await Promise.all([
+    prisma.emotionTag.create({
+      data: {
+        name: "嬉しい",
+      },
+    }),
+    prisma.emotionTag.create({
+      data: {
+        name: "楽しい",
+      },
+    }),
+    prisma.emotionTag.create({
+      data: {
+        name: "悲しい",
+      },
+    }),
+    prisma.emotionTag.create({
+      data: {
+        name: "怒り",
+      },
+    }),
+    prisma.emotionTag.create({
+      data: {
+        name: "不安",
+      },
+    }),
+  ]);
 
-    for (const statement of statements) {
-      if (statement.trim()) {
-        await prisma.$executeRawUnsafe(statement + ";");
-      }
-    }
+  // 投稿データを作成
+  await Promise.all([
+    prisma.post.create({
+      data: {
+        content: "今日は晴れて気持ちがいい一日でした！",
+        emotionTagId: emotionTags[0].id, // 嬉しい
+        ipAddress: "127.0.0.1",
+      },
+    }),
+    prisma.post.create({
+      data: {
+        content: "友達と遊園地に行って楽しかった！",
+        emotionTagId: emotionTags[1].id, // 楽しい
+        ipAddress: "127.0.0.1",
+      },
+    }),
+    prisma.post.create({
+      data: {
+        content: "大切なものをなくしてしまった...",
+        emotionTagId: emotionTags[2].id, // 悲しい
+        ipAddress: "127.0.0.1",
+      },
+    }),
+  ]);
 
-    console.log("Seed data has been successfully inserted");
-  } catch (error) {
-    console.error("Error seeding data:", error);
-    throw error;
-  }
+  console.log("シードデータの作成が完了しました");
 }
 
 main()
