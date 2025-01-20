@@ -18,6 +18,7 @@ model Post {
     emotionTag EmotionTag @relation(fields: [emotionTagId], references: [id])
     emotionTagId String
     empathies Empathy[]
+    stamps    Stamp[]
     ipAddress String   @default("127.0.0.1") // ユーザーのIPアドレスを保存
 
     @@index([createdAt])
@@ -37,4 +38,16 @@ model Empathy {
     createdAt DateTime @default(now())
 
     @@index([postId])
+}
+
+model Stamp {
+    id        String   @id @default(cuid())
+    type      String   // "thanks"など、スタンプの種類
+    post      Post     @relation(fields: [postId], references: [id])
+    postId    String
+    createdAt DateTime @default(now())
+    ipAddress String   // スタンプを押したユーザーのIPアドレス
+
+    @@index([postId])
+    @@index([ipAddress])
 }

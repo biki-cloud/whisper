@@ -104,6 +104,7 @@ export const postRouter = createTRPCRouter({
         include: {
           emotionTag: true,
           empathies: true,
+          stamps: true,
         },
         orderBy: {
           createdAt: orderBy,
@@ -159,4 +160,74 @@ export const postRouter = createTRPCRouter({
       },
     });
   }),
+
+  addStamp: publicProcedure
+    .input(
+      z.object({
+        postId: z.string(),
+        type: z.enum(["thanks"]), // 現在は"ありがとう"スタンプのみ
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 投稿の存在確認
+      const post = await ctx.db.post.findUnique({
+        where: { id: input.postId },
+        include: {
+          emotionTag: true,
+          empathies: true,
+          stamps: true,
+        },
+      });
+
+      if (!post) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "投稿が見つかりません",
+        });
+      }
+
+      // 同じIPアドレスからの同じ投稿への同じタイプのスタンプをチェック
+      const existingStamp = await ctx.db.stamp.findFirst({
+        where: {
+          postId: input.postId,
+          type: input.type,
+          ipAddress: ctx.ip,
+        },
+      });
+
+      if (existingStamp) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "すでにスタンプを押しています",
+        });
+      }
+
+      // スタンプを作成
+      await ctx.db.stamp.create({
+        data: {
+          postId: input.postId,
+          type: input.type,
+          ipAddress: ctx.ip,
+        },
+      });
+
+      // 更新された投稿を返す
+      const updatedPost = await ctx.db.post.findUnique({
+        where: { id: input.postId },
+        include: {
+          emotionTag: true,
+          empathies: true,
+          stamps: true,
+        },
+      });
+
+      if (!updatedPost) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "投稿が見つかりません",
+        });
+      }
+
+      return updatedPost;
+    }),
 });
