@@ -17,13 +17,15 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // 現在の日付の開始時刻（00:00:00）を取得
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // 現在の日付の開始時刻（00:00:00）を取得（日本時間）
+      const now = new Date();
+      const jstOffset = 9 * 60; // UTC+9の分単位のオフセット
+      const today = new Date(now.getTime() + jstOffset * 60 * 1000);
+      today.setUTCHours(0, 0, 0, 0);
 
       // 明日の開始時刻（00:00:00）を取得
       const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
       // 同じIPアドレスからの当日の投稿をチェック
       const existingPosts = await ctx.db.post.findMany({
@@ -85,11 +87,13 @@ export const postRouter = createTRPCRouter({
         where.emotionTagId = emotionTagId;
       }
 
-      // 今日の投稿のみを取得
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // 今日の投稿のみを取得（日本時間）
+      const now = new Date();
+      const jstOffset = 9 * 60; // UTC+9の分単位のオフセット
+      const today = new Date(now.getTime() + jstOffset * 60 * 1000);
+      today.setUTCHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
       where.createdAt = {
         gte: today,
