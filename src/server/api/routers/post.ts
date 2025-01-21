@@ -176,7 +176,7 @@ export const postRouter = createTRPCRouter({
       }
 
       // 同じIPアドレスからの同じ投稿への同じタイプのスタンプをチェック
-      const existingStamp = await ctx.db.Stamp.findFirst({
+      const existingStamp = await ctx.db.stamp.findFirst({
         where: {
           postId: input.postId,
           type: input.type,
