@@ -211,4 +211,46 @@ export const postRouter = createTRPCRouter({
   getClientIp: publicProcedure.query(({ ctx }) => {
     return ctx.ip;
   }),
+
+  delete: publicProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        ipAddress: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const post = await ctx.db.post.findUnique({
+        where: { id: input.id },
+        include: {
+          stamps: true,
+        },
+      });
+
+      if (!post) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "投稿が見つかりません。",
+        });
+      }
+
+      if (post.ipAddress !== input.ipAddress) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "この投稿を削除する権限がありません。",
+        });
+      }
+
+      // 関連するスタンプを削除
+      await ctx.db.stamp.deleteMany({
+        where: { postId: input.id },
+      });
+
+      // 投稿を削除
+      await ctx.db.post.delete({
+        where: { id: input.id },
+      });
+
+      return { success: true };
+    }),
 });

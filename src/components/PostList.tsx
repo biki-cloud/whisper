@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/utils/api";
-import { type Post } from "~/types/api";
+import { type GetAllPostsItem } from "~/types/api";
 import { getEmotionEmoji } from "~/utils/emotions";
 
 export function PostList() {
@@ -22,6 +22,12 @@ export function PostList() {
   );
 
   const addStamp = api.post.addStamp.useMutation({
+    onSuccess: () => {
+      void utils.post.getAll.invalidate();
+    },
+  });
+
+  const deletePost = api.post.delete.useMutation({
     onSuccess: () => {
       void utils.post.getAll.invalidate();
     },
@@ -71,7 +77,7 @@ export function PostList() {
           <option value="asc">古い順</option>
         </select>
       </div>
-      {posts.map((post) => (
+      {posts.map((post: GetAllPostsItem) => (
         <div
           key={post.id}
           className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
@@ -98,76 +104,85 @@ export function PostList() {
                     .emoji
                 }
               </span>
+              {post.emotionTag.name}
+            </button>
+            {clientIp === post.ipAddress && (
+              <button
+                onClick={() => {
+                  if (window.confirm("この投稿を削除してもよろしいですか？")) {
+                    deletePost.mutate({
+                      id: post.id,
+                      ipAddress: clientIp ?? "",
+                    });
+                  }
+                }}
+                className="text-sm text-red-500 hover:text-red-600"
+              >
+                削除
+              </button>
+            )}
+          </div>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() =>
+                addStamp.mutate({ postId: post.id, type: "thanks" })
+              }
+              className={`inline-flex items-center space-x-1 rounded-md px-2 py-1 ${
+                post.stamps?.some(
+                  (stamp) =>
+                    stamp.type === "thanks" && stamp.ipAddress === clientIp,
+                )
+                  ? "bg-blue-500 text-white hover:bg-blue-600"
+                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              }`}
+              disabled={addStamp.isPending}
+            >
+              <span className="text-xl">🙏</span>
               <span>
-                {
-                  getEmotionEmoji(post.emotionTag.id, post.emotionTag.name)
-                    .label
-                }
+                {post.stamps?.filter((stamp) => stamp.type === "thanks")
+                  .length ?? 0}
               </span>
             </button>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() =>
-                  addStamp.mutate({ postId: post.id, type: "thanks" })
-                }
-                className={`inline-flex items-center space-x-1 rounded-md px-2 py-1 ${
-                  post.stamps?.some(
-                    (stamp) =>
-                      stamp.type === "thanks" && stamp.ipAddress === clientIp,
-                  )
-                    ? "bg-blue-500 text-white hover:bg-blue-600"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                }`}
-                disabled={addStamp.isPending}
-              >
-                <span className="text-xl">🙏</span>
-                <span>
-                  {post.stamps?.filter((stamp) => stamp.type === "thanks")
-                    .length ?? 0}
-                </span>
-              </button>
-              <button
-                onClick={() =>
-                  addStamp.mutate({ postId: post.id, type: "empathy" })
-                }
-                className={`inline-flex items-center space-x-1 rounded-md px-2 py-1 ${
+            <button
+              onClick={() =>
+                addStamp.mutate({ postId: post.id, type: "empathy" })
+              }
+              className={`inline-flex items-center space-x-1 rounded-md px-2 py-1 ${
+                post.stamps?.some(
+                  (stamp) =>
+                    stamp.type === "empathy" && stamp.ipAddress === clientIp,
+                )
+                  ? "bg-blue-500 text-white hover:bg-blue-600"
+                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              }`}
+              disabled={addStamp.isPending}
+            >
+              <svg
+                className="h-5 w-5"
+                fill={
                   post.stamps?.some(
                     (stamp) =>
                       stamp.type === "empathy" && stamp.ipAddress === clientIp,
                   )
-                    ? "bg-blue-500 text-white hover:bg-blue-600"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                }`}
-                disabled={addStamp.isPending}
+                    ? "currentColor"
+                    : "none"
+                }
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill={
-                    post.stamps?.some(
-                      (stamp) =>
-                        stamp.type === "empathy" &&
-                        stamp.ipAddress === clientIp,
-                    )
-                      ? "currentColor"
-                      : "none"
-                  }
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
-                <span>
-                  {post.stamps?.filter((stamp) => stamp.type === "empathy")
-                    .length ?? 0}
-                </span>
-              </button>
-            </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+              <span>
+                {post.stamps?.filter((stamp) => stamp.type === "empathy")
+                  .length ?? 0}
+              </span>
+            </button>
           </div>
         </div>
       ))}

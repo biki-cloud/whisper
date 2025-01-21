@@ -13,4 +13,27 @@ export type Post = Prisma.PostGetPayload<{
 }>;
 
 export type EmotionTag = RouterOutputs["emotionTag"]["getAll"][number];
-export type GetAllPostsResponse = RouterOutputs["post"]["getAll"];
+
+export type GetAllPostsOutput = RouterOutputs["post"]["getAll"];
+
+export type GetAllPostsItem = {
+  id: string;
+  content: string;
+  createdAt: Date;
+  emotionTagId: string;
+  ipAddress: string;
+  emotionTag: {
+    id: string;
+    name: string;
+  };
+  stamps: Array<{
+    id: string;
+    type: string;
+    ipAddress: string;
+  }>;
+};
+
+export type GetAllPostsResponse = {
+  items: GetAllPostsItem[];
+  nextCursor: string | null;
+};
