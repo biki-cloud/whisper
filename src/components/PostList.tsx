@@ -109,10 +109,13 @@ export function PostList() {
             {clientIp === post.ipAddress && (
               <button
                 onClick={() => {
-                  if (window.confirm("この投稿を削除してもよろしいですか？")) {
+                  if (
+                    window.confirm(
+                      "この投稿を削除してもよろしいですか？ 本日の再投稿はできません。",
+                    )
+                  ) {
                     deletePost.mutate({
-                      id: post.id,
-                      ipAddress: clientIp ?? "",
+                      postId: post.id,
                     });
                   }
                 }}

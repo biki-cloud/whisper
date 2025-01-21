@@ -52,6 +52,31 @@ export const postRouter = createTRPCRouter({
         });
       }
 
+      // 同じ日に削除した投稿があるかチェック
+      const deletedPosts = await ctx.db.deletedPost.findMany({
+        where: {
+          AND: [
+            {
+              deletedAt: {
+                gte: today,
+                lt: tomorrow,
+              },
+            },
+            {
+              ipAddress: ctx.ip,
+            },
+          ],
+        },
+        take: 1,
+      });
+
+      if (deletedPosts.length > 0) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "投稿を削除した同じ日には再投稿できません。",
+        });
+      }
+
       // 投稿を作成
       const post = await ctx.db.post.create({
         data: {
@@ -151,7 +176,7 @@ export const postRouter = createTRPCRouter({
       }
 
       // 同じIPアドレスからの同じ投稿への同じタイプのスタンプをチェック
-      const existingStamp = await ctx.db.stamp.findFirst({
+      const existingStamp = await ctx.db.Stamp.findFirst({
         where: {
           postId: input.postId,
           type: input.type,
@@ -213,42 +238,37 @@ export const postRouter = createTRPCRouter({
   }),
 
   delete: publicProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        ipAddress: z.string(),
-      }),
-    )
+    .input(z.object({ postId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // 投稿の存在確認と所有権チェック
       const post = await ctx.db.post.findUnique({
-        where: { id: input.id },
-        include: {
-          stamps: true,
-        },
+        where: { id: input.postId },
       });
 
       if (!post) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "投稿が見つかりません。",
+          message: "投稿が見つかりません",
         });
       }
 
-      if (post.ipAddress !== input.ipAddress) {
+      if (post.ipAddress !== ctx.ip) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "この投稿を削除する権限がありません。",
+          message: "この投稿を削除する権限がありません",
         });
       }
 
-      // 関連するスタンプを削除
-      await ctx.db.stamp.deleteMany({
-        where: { postId: input.id },
+      // 削除記録を作成
+      await ctx.db.deletedPost.create({
+        data: {
+          ipAddress: ctx.ip,
+        },
       });
 
       // 投稿を削除
       await ctx.db.post.delete({
-        where: { id: input.id },
+        where: { id: input.postId },
       });
 
       return { success: true };

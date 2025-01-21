@@ -41,3 +41,12 @@ model Stamp {
   @@index([postId])
   @@index([ipAddress])
 }
+
+model DeletedPost {
+  id        String   @id @default(cuid())
+  ipAddress String
+  deletedAt DateTime @default(now())
+
+  @@index([ipAddress])
+  @@index([deletedAt])
+}
