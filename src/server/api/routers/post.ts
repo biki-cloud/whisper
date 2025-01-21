@@ -156,20 +156,22 @@ export const postRouter = createTRPCRouter({
       });
 
       if (existingStamp) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "すでにスタンプを押しています",
+        // 既存のスタンプが存在する場合は削除
+        await ctx.db.stamp.delete({
+          where: {
+            id: existingStamp.id,
+          },
+        });
+      } else {
+        // スタンプが存在しない場合は新規作成
+        await ctx.db.stamp.create({
+          data: {
+            postId: input.postId,
+            type: input.type,
+            ipAddress: ctx.ip,
+          },
         });
       }
-
-      // スタンプを作成
-      await ctx.db.stamp.create({
-        data: {
-          postId: input.postId,
-          type: input.type,
-          ipAddress: ctx.ip,
-        },
-      });
 
       // 更新された投稿を返す
       const updatedPost = await ctx.db.post.findUnique({

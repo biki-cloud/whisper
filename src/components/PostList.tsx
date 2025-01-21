@@ -2,28 +2,24 @@
 
 import { useState } from "react";
 import { api } from "~/utils/api";
-import { type RouterOutputs } from "~/types/api";
+import { type Post } from "~/types/api";
 import { getEmotionEmoji } from "~/utils/emotions";
-import { type StampType } from "@prisma/client";
-
-type Post = RouterOutputs["post"]["getAll"]["items"][number];
 
 export function PostList() {
   const utils = api.useContext();
   const [emotionTagId, setEmotionTagId] = useState<string | undefined>();
   const [orderBy, setOrderBy] = useState<"desc" | "asc">("desc");
 
-  const { data, isLoading, fetchNextPage, hasNextPage } =
-    api.post.getAll.useInfiniteQuery(
-      {
-        limit: 10,
-        emotionTagId,
-        orderBy,
-      },
-      {
-        getNextPageParam: (lastPage) => lastPage.nextCursor,
-      },
-    );
+  const { data, isLoading } = api.post.getAll.useInfiniteQuery(
+    {
+      limit: 10,
+      emotionTagId,
+      orderBy,
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
 
   const addStamp = api.post.addStamp.useMutation({
     onSuccess: () => {
@@ -114,25 +110,19 @@ export function PostList() {
                 onClick={() =>
                   addStamp.mutate({ postId: post.id, type: "thanks" })
                 }
-                className={`inline-flex items-center space-x-1 ${
-                  post.stamps.some(
+                className={`inline-flex items-center space-x-1 rounded-md px-2 py-1 ${
+                  post.stamps?.some(
                     (stamp) =>
                       stamp.type === "thanks" && stamp.ipAddress === clientIp,
                   )
-                    ? "cursor-not-allowed bg-blue-500 text-white"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    ? "bg-blue-500 text-white hover:bg-blue-600"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                 }`}
-                disabled={
-                  addStamp.isPending ||
-                  post.stamps.some(
-                    (stamp) =>
-                      stamp.type === "thanks" && stamp.ipAddress === clientIp,
-                  )
-                }
+                disabled={addStamp.isPending}
               >
                 <span className="text-xl">🙏</span>
                 <span>
-                  {post.stamps.filter((stamp) => stamp.type === "thanks")
+                  {post.stamps?.filter((stamp) => stamp.type === "thanks")
                     .length ?? 0}
                 </span>
               </button>
@@ -140,25 +130,27 @@ export function PostList() {
                 onClick={() =>
                   addStamp.mutate({ postId: post.id, type: "empathy" })
                 }
-                className={`inline-flex items-center space-x-1 ${
-                  post.stamps.some(
+                className={`inline-flex items-center space-x-1 rounded-md px-2 py-1 ${
+                  post.stamps?.some(
                     (stamp) =>
                       stamp.type === "empathy" && stamp.ipAddress === clientIp,
                   )
-                    ? "cursor-not-allowed bg-blue-500 text-white"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    ? "bg-blue-500 text-white hover:bg-blue-600"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                 }`}
-                disabled={
-                  addStamp.isPending ||
-                  post.stamps.some(
-                    (stamp) =>
-                      stamp.type === "empathy" && stamp.ipAddress === clientIp,
-                  )
-                }
+                disabled={addStamp.isPending}
               >
                 <svg
                   className="h-5 w-5"
-                  fill="none"
+                  fill={
+                    post.stamps?.some(
+                      (stamp) =>
+                        stamp.type === "empathy" &&
+                        stamp.ipAddress === clientIp,
+                    )
+                      ? "currentColor"
+                      : "none"
+                  }
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                   xmlns="http://www.w3.org/2000/svg"
@@ -171,7 +163,7 @@ export function PostList() {
                   />
                 </svg>
                 <span>
-                  {post.stamps.filter((stamp) => stamp.type === "empathy")
+                  {post.stamps?.filter((stamp) => stamp.type === "empathy")
                     .length ?? 0}
                 </span>
               </button>
@@ -179,16 +171,6 @@ export function PostList() {
           </div>
         </div>
       ))}
-      {hasNextPage && (
-        <div className="flex justify-center py-4">
-          <button
-            onClick={() => void fetchNextPage()}
-            className="rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-600"
-          >
-            もっと見る
-          </button>
-        </div>
-      )}
     </div>
   );
 }

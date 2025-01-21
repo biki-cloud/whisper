@@ -2,47 +2,42 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
-    directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Post {
-    id        String   @id @default(cuid())
-    content   String   @db.Text
-    createdAt DateTime @default(now())
-    emotionTag EmotionTag @relation(fields: [emotionTagId], references: [id])
-    emotionTagId String
-    stamps    Stamp[]
-    ipAddress String   @default("127.0.0.1") // ユーザーのIPアドレスを保存
+  id           String     @id @default(cuid())
+  content      String     @db.Text
+  createdAt    DateTime   @default(now())
+  emotionTagId String
+  ipAddress    String     @default("127.0.0.1")
+  emotionTag   EmotionTag @relation(fields: [emotionTagId], references: [id])
+  stamps       Stamp[]
 
-    @@index([createdAt])
-    @@index([ipAddress])
+  @@index([createdAt])
+  @@index([ipAddress])
 }
 
 model EmotionTag {
-    id    String @id @default(cuid())
-    name  String
-    posts Post[]
+  id    String @id @default(cuid())
+  name  String
+  posts Post[]
 }
 
 model Stamp {
-    id        String   @id @default(cuid())
-    type      StampType // "thanks" または "empathy"
-    post      Post     @relation(fields: [postId], references: [id])
-    postId    String
-    createdAt DateTime @default(now())
-    ipAddress String   // スタンプを押したユーザーのIPアドレス
+  id        String   @id @default(cuid())
+  type      String
+  postId    String
+  createdAt DateTime @default(now())
+  ipAddress String
+  post      Post     @relation(fields: [postId], references: [id])
 
-    @@index([postId])
-    @@index([ipAddress])
-}
-
-enum StampType {
-    thanks
-    empathy
+  @@index([postId])
+  @@index([ipAddress])
 }
