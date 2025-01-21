@@ -1,4 +1,5 @@
 import "~/styles/globals.css";
+import { Analytics } from "@vercel/analytics/react";
 
 import { Inter } from "next/font/google";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
           <Navbar />
           {children}
         </TRPCReactProvider>
+        <Analytics />
       </body>
     </html>
   );
