@@ -60,6 +60,7 @@ export function PostList() {
           value={emotionTagId ?? ""}
           onChange={(e) => setEmotionTagId(e.target.value || undefined)}
           className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+          aria-label="すべての感情"
         >
           <option value="">すべての感情</option>
           <option value="clh1234567890">😠 怒り</option>
@@ -72,6 +73,7 @@ export function PostList() {
           value={orderBy}
           onChange={(e) => setOrderBy(e.target.value as "desc" | "asc")}
           className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+          aria-label="新しい順"
         >
           <option value="desc">新しい順</option>
           <option value="asc">古い順</option>
@@ -139,6 +141,7 @@ export function PostList() {
                   : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
               }`}
               disabled={addStamp.isPending}
+              aria-label="ありがとうボタン"
             >
               <span className="text-xl">🙏</span>
               <span>
@@ -159,6 +162,7 @@ export function PostList() {
                   : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
               }`}
               disabled={addStamp.isPending}
+              aria-label="共感ボタン"
             >
               <svg
                 className="h-5 w-5"

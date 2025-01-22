@@ -17,7 +17,10 @@ const config: Config = {
   // TypeScriptのパスエイリアスを解決するための設定
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^~/(.*)$": "<rootDir>/src/$1",
   },
+  // セットアップファイルを指定
+  setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
 };
 
 // createJestConfigを定義することによって、本ファイルで定義された設定がNext.jsの設定に反映される
