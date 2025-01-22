@@ -83,7 +83,7 @@ export function PostForm() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-4 dark:bg-red-900">
+        <div className="rounded-md bg-red-50 p-4 dark:bg-red-900" role="alert">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg
@@ -99,7 +99,12 @@ export function PostForm() {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
+              <p
+                className="text-sm text-red-700 dark:text-red-200"
+                data-testid="error-message"
+              >
+                {error}
+              </p>
             </div>
           </div>
         </div>
