@@ -1,7 +1,5 @@
-import { type PropsWithChildren } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
-import { api } from "~/utils/api";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -12,7 +10,9 @@ const queryClient = new QueryClient({
 });
 
 export function withTRPC(Component: React.ComponentType) {
-  return function WrappedComponent(props: any) {
+  return function WrappedComponent(
+    props: React.ComponentProps<typeof Component>,
+  ) {
     return (
       <QueryClientProvider client={queryClient}>
         <Component {...props} />
