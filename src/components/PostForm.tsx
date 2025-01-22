@@ -18,7 +18,7 @@ export function PostForm() {
       setContent("");
       setSelectedEmotionTagId("");
       setError(null);
-      void utils.post.getLatest.invalidate();
+      void utils.post.getAll.invalidate();
       router.push("/");
     },
     onError: (error) => {
@@ -41,7 +41,7 @@ export function PostForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" data-testid="post-form">
       <div>
         <label
           htmlFor="content"

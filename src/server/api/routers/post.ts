@@ -221,18 +221,6 @@ export const postRouter = createTRPCRouter({
       return updatedPost;
     }),
 
-  getLatest: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.post.findMany({
-      include: {
-        emotionTag: true,
-        stamps: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  }),
-
   getClientIp: publicProcedure.query(({ ctx }) => {
     return ctx.ip;
   }),
@@ -273,4 +261,16 @@ export const postRouter = createTRPCRouter({
 
       return { success: true };
     }),
+
+  getAllPosts: publicProcedure.query(async ({ ctx }) => {
+    return ctx.db.post.findMany({
+      include: {
+        emotionTag: true,
+        stamps: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }),
 });
