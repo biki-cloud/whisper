@@ -1,13 +1,12 @@
 "use client";
 
 import { type ReactNode } from "react";
+import { type StampType } from "~/types/stamps";
 
 export interface StampConfig {
   icon: ReactNode;
   label: string;
 }
-
-export type StampType = "thanks" | "love" | "smile" | "cry" | "sad" | "shock";
 
 export const stampConfig: Record<StampType, StampConfig> = {
   thanks: {
