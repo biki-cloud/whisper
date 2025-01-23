@@ -174,7 +174,7 @@ describe("PostForm", () => {
   });
 
   it("投稿成功時に適切な処理が行われること", async () => {
-    const mockMutate = jest.fn().mockImplementation((data) => {
+    const mockMutate = jest.fn().mockImplementation((_data) => {
       setTimeout(() => {
         const contentInput = screen.getByLabelText("今日の想いを綴る");
         const emotionTagSelect = screen.getByLabelText("感情タグ");
@@ -185,13 +185,15 @@ describe("PostForm", () => {
       }, 0);
     });
 
-    (api.post.create.useMutation as jest.Mock).mockReturnValue({
+    const _mockMutationResult = {
       mutate: mockMutate,
       isPending: false,
-      isError: false,
-      error: null,
       trpc: { path: "post.create" },
-    });
+    };
+
+    (api.post.create.useMutation as jest.Mock).mockReturnValue(
+      _mockMutationResult,
+    );
 
     renderWithProviders(<PostForm />);
 

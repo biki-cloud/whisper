@@ -40,5 +40,5 @@
     "**/*.js",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["coverage"]
+  "exclude": ["coverage", "public"]
 }
