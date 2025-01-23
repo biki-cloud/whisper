@@ -115,7 +115,7 @@ describe("PostList", () => {
     expect(screen.getByRole("status")).toBeInTheDocument();
   });
 
-  it("投稿が0件の場合にメッセージが表示される", () => {
+  it("投稿が0件の場合にメッセージが表示され、フィルターUIも表示される", () => {
     mockGetAllQuery.mockReturnValueOnce({
       data: {
         pages: [
@@ -130,6 +130,25 @@ describe("PostList", () => {
 
     render(<WrappedPostList />);
     expect(screen.getByText("投稿がありません")).toBeInTheDocument();
+
+    // フィルターUIが表示されることを確認
+    expect(
+      screen.getByRole("combobox", { name: /すべての感情/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: /新しい順/i }),
+    ).toBeInTheDocument();
+
+    // フィルターが機能することを確認
+    const emotionSelect = screen.getByRole("combobox", {
+      name: /すべての感情/i,
+    });
+    fireEvent.change(emotionSelect, { target: { value: "clh1234567890" } });
+    expect(emotionSelect).toHaveValue("clh1234567890");
+
+    const orderSelect = screen.getByRole("combobox", { name: /新しい順/i });
+    fireEvent.change(orderSelect, { target: { value: "asc" } });
+    expect(orderSelect).toHaveValue("asc");
   });
 
   it("スタンプが付いている投稿が表示される", () => {
@@ -278,7 +297,7 @@ describe("PostList", () => {
 
   it("スタンプの追加後にデータが再取得される", () => {
     const mockInvalidate = jest.fn();
-    (api.useContext as jest.Mock).mockReturnValue({
+    (api.useContext as jest.Mock).mockReturnValueOnce({
       post: {
         getAll: {
           invalidate: mockInvalidate,
@@ -286,13 +305,11 @@ describe("PostList", () => {
       },
     });
 
-    const mockMutate = jest.fn();
-    (api.post.addStamp.useMutation as jest.Mock).mockReturnValue({
-      mutate: mockMutate,
+    const mockAddStamp = jest.fn();
+    (api.post.addStamp.useMutation as jest.Mock).mockReturnValueOnce({
+      mutate: mockAddStamp,
       isPending: false,
-      onSuccess: () => {
-        mockInvalidate();
-      },
+      onSettled: jest.fn(),
     });
 
     render(<WrappedPostList />);
@@ -301,10 +318,10 @@ describe("PostList", () => {
     });
     fireEvent.click(thanksButton);
 
-    // onSuccessを手動で呼び出す
+    // onSettledが呼ばれることを確認
     const mutationOptions = (api.post.addStamp.useMutation as jest.Mock).mock
       .calls[0][0];
-    mutationOptions.onSuccess();
+    mutationOptions.onSettled();
 
     expect(mockInvalidate).toHaveBeenCalled();
   });

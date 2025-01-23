@@ -111,40 +111,47 @@ export function PostList() {
 
   const posts = data?.pages.flatMap((page) => page.items) ?? [];
 
+  const filterUI = (
+    <div className="flex gap-4 p-4">
+      <select
+        value={emotionTagId ?? ""}
+        onChange={(e) => setEmotionTagId(e.target.value || undefined)}
+        className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+        aria-label="すべての感情"
+      >
+        <option value="">すべての感情</option>
+        <option value="clh1234567890">😠 怒り</option>
+        <option value="clh1234567891">😢 悲しみ</option>
+        <option value="clh1234567892">😰 不安</option>
+        <option value="clh1234567893">😊 喜び</option>
+        <option value="clh1234567894">😔 落ち込み</option>
+      </select>
+      <select
+        value={orderBy}
+        onChange={(e) => setOrderBy(e.target.value as "desc" | "asc")}
+        className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+        aria-label="新しい順"
+      >
+        <option value="desc">新しい順</option>
+        <option value="asc">古い順</option>
+      </select>
+    </div>
+  );
+
   if (!posts.length) {
     return (
-      <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-        投稿がありません
+      <div className="space-y-4">
+        {filterUI}
+        <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+          投稿がありません
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 p-4">
-        <select
-          value={emotionTagId ?? ""}
-          onChange={(e) => setEmotionTagId(e.target.value || undefined)}
-          className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
-          aria-label="すべての感情"
-        >
-          <option value="">すべての感情</option>
-          <option value="clh1234567890">😠 怒り</option>
-          <option value="clh1234567891">😢 悲しみ</option>
-          <option value="clh1234567892">😰 不安</option>
-          <option value="clh1234567893">😊 喜び</option>
-          <option value="clh1234567894">😔 落ち込み</option>
-        </select>
-        <select
-          value={orderBy}
-          onChange={(e) => setOrderBy(e.target.value as "desc" | "asc")}
-          className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
-          aria-label="新しい順"
-        >
-          <option value="desc">新しい順</option>
-          <option value="asc">古い順</option>
-        </select>
-      </div>
+      {filterUI}
       {posts.map((post: GetAllPostsItem) => (
         <div
           key={post.id}
