@@ -7,27 +7,32 @@ async function main() {
   const emotionTags = await Promise.all([
     prisma.emotionTag.create({
       data: {
-        name: "嬉しい",
-      },
-    }),
-    prisma.emotionTag.create({
-      data: {
-        name: "楽しい",
-      },
-    }),
-    prisma.emotionTag.create({
-      data: {
-        name: "悲しい",
-      },
-    }),
-    prisma.emotionTag.create({
-      data: {
         name: "怒り",
       },
     }),
     prisma.emotionTag.create({
       data: {
+        name: "悲しみ",
+      },
+    }),
+    prisma.emotionTag.create({
+      data: {
         name: "不安",
+      },
+    }),
+    prisma.emotionTag.create({
+      data: {
+        name: "喜び",
+      },
+    }),
+    prisma.emotionTag.create({
+      data: {
+        name: "落ち込み",
+      },
+    }),
+    prisma.emotionTag.create({
+      data: {
+        name: "楽しい",
       },
     }),
   ]);

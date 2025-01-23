@@ -98,6 +98,8 @@ export function PostList() {
 
   const { data: clientIp } = api.post.getClientIp.useQuery();
 
+  const { data: emotionTags } = api.emotionTag.getAll.useQuery();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -120,11 +122,14 @@ export function PostList() {
         aria-label="すべての感情"
       >
         <option value="">すべての感情</option>
-        <option value="clh1234567890">😠 怒り</option>
-        <option value="clh1234567891">😢 悲しみ</option>
-        <option value="clh1234567892">😰 不安</option>
-        <option value="clh1234567893">😊 喜び</option>
-        <option value="clh1234567894">😔 落ち込み</option>
+        {emotionTags?.map((tag) => {
+          const emotion = getEmotionEmoji(tag.id, tag.name);
+          return (
+            <option key={tag.id} value={tag.id}>
+              {emotion.emoji} {tag.name}
+            </option>
+          );
+        })}
       </select>
       <select
         value={orderBy}
