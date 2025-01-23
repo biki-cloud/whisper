@@ -247,6 +247,11 @@ export const postRouter = createTRPCRouter({
         });
       }
 
+      // 関連するスタンプを先に削除
+      await ctx.db.stamp.deleteMany({
+        where: { postId: input.postId },
+      });
+
       // 削除記録を作成
       await ctx.db.deletedPost.create({
         data: {

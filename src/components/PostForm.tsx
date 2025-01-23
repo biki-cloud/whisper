@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "~/utils/api";
 import { type EmotionTag } from "~/types/api";
 import { useRouter } from "next/navigation";
+import { getEmotionEmoji } from "~/utils/emotions";
 
 export function PostForm() {
   const [content, setContent] = useState("");
@@ -74,11 +75,14 @@ export function PostForm() {
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
         >
           <option value="">選択してください</option>
-          {emotionTags?.map((tag: EmotionTag) => (
-            <option key={tag.id} value={tag.id}>
-              {tag.name}
-            </option>
-          ))}
+          {emotionTags?.map((tag: EmotionTag) => {
+            const emotion = getEmotionEmoji(tag.id, tag.name);
+            return (
+              <option key={tag.id} value={tag.id}>
+                {emotion.emoji} {tag.name}
+              </option>
+            );
+          })}
         </select>
       </div>
 
