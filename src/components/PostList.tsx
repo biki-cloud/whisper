@@ -22,7 +22,70 @@ export function PostList() {
   );
 
   const addStamp = api.post.addStamp.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ postId, type }) => {
+      await utils.post.getAll.cancel();
+
+      const prevData = utils.post.getAll.getInfiniteData({
+        limit: 10,
+        emotionTagId,
+        orderBy,
+      });
+
+      utils.post.getAll.setInfiniteData(
+        { limit: 10, emotionTagId, orderBy },
+        (old) => {
+          if (!old) return { pages: [], pageParams: [] };
+
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((post) => {
+                if (post.id !== postId) return post;
+
+                const existingStamp = post.stamps?.find(
+                  (s) => s.type === type && s.ipAddress === clientIp,
+                );
+
+                const stamps = post.stamps ?? [];
+
+                if (existingStamp) {
+                  return {
+                    ...post,
+                    stamps: stamps.filter((s) => s.id !== existingStamp.id),
+                  };
+                }
+
+                return {
+                  ...post,
+                  stamps: [
+                    ...stamps,
+                    {
+                      id: `temp-${Date.now()}`,
+                      type,
+                      ipAddress: clientIp ?? "",
+                      postId,
+                      createdAt: new Date(),
+                    },
+                  ],
+                };
+              }),
+            })),
+          };
+        },
+      );
+
+      return { prevData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.prevData) {
+        utils.post.getAll.setInfiniteData(
+          { limit: 10, emotionTagId, orderBy },
+          context.prevData,
+        );
+      }
+    },
+    onSettled: () => {
       void utils.post.getAll.invalidate();
     },
   });
