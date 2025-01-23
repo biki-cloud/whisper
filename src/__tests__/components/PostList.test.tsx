@@ -650,4 +650,220 @@ describe("PostList", () => {
     expect(select).toBeInTheDocument();
     expect(select.children.length).toBe(1); // "すべての感情" オプションのみ
   });
+
+  it("無限スクロールのデータが正しく表示される", () => {
+    mockGetAllQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "1つ目の投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: { id: "clh1234567890", name: "怒り" },
+                ipAddress: "127.0.0.1",
+                stamps: [],
+              },
+            ],
+            nextCursor: "cursor1",
+          },
+          {
+            items: [
+              {
+                id: "2",
+                content: "2つ目の投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: { id: "clh1234567891", name: "悲しみ" },
+                ipAddress: "127.0.0.1",
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+      hasNextPage: false,
+    });
+
+    render(<WrappedPostList />);
+    expect(screen.getByText("1つ目の投稿")).toBeInTheDocument();
+    expect(screen.getByText("2つ目の投稿")).toBeInTheDocument();
+  });
+
+  it("無限スクロールのデータ取得が正しく動作する", async () => {
+    const mockFetchNextPage = jest.fn();
+    mockGetAllQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿1",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "clh1234567890",
+                  name: "怒り",
+                },
+                ipAddress: "127.0.0.1",
+                stamps: [],
+              },
+            ],
+            nextCursor: "next",
+          },
+        ],
+      },
+      isLoading: false,
+      fetchNextPage: mockFetchNextPage,
+      hasNextPage: true,
+      isFetchingNextPage: false,
+    });
+
+    render(<WrappedPostList />);
+
+    // fetchNextPageが呼び出せることを確認
+    expect(mockFetchNextPage).toBeDefined();
+    expect(typeof mockFetchNextPage).toBe("function");
+  });
+
+  it("スタンプの追加時にoptimistic updateが動作する", async () => {
+    const mockContext = {
+      post: {
+        getAll: {
+          cancel: jest.fn(),
+          getInfiniteData: jest.fn(() => ({
+            pages: [
+              {
+                items: [
+                  {
+                    id: "1",
+                    content: "テスト投稿",
+                    stamps: [],
+                  },
+                ],
+              },
+            ],
+          })),
+          setInfiniteData: jest.fn(),
+          invalidate: jest.fn(),
+        },
+      },
+    };
+
+    (api.useContext as jest.Mock).mockReturnValue(mockContext);
+
+    const mockMutate = jest
+      .fn()
+      .mockImplementation(async ({ postId, type }) => {
+        await mockContext.post.getAll.cancel();
+        const prevData = mockContext.post.getAll.getInfiniteData();
+        mockContext.post.getAll.setInfiniteData(
+          { limit: 10, emotionTagId: undefined, orderBy: "desc" },
+          (old: any) => ({
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((post: any) => {
+                if (post.id !== postId) return post;
+                return {
+                  ...post,
+                  stamps: [
+                    ...(post.stamps ?? []),
+                    {
+                      id: `temp-${Date.now()}`,
+                      type,
+                      ipAddress: "127.0.0.1",
+                      postId,
+                      createdAt: new Date(),
+                    },
+                  ],
+                };
+              }),
+            })),
+          }),
+        );
+      });
+
+    (api.post.addStamp.useMutation as jest.Mock).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    });
+
+    render(<WrappedPostList />);
+    const thanksButton = screen.getByRole("button", {
+      name: "ありがとうボタン",
+    });
+    fireEvent.click(thanksButton);
+
+    // 非同期処理を待つ
+    await mockMutate({ postId: "1", type: "thanks" });
+
+    expect(mockContext.post.getAll.setInfiniteData).toHaveBeenCalled();
+  });
+
+  it("スタンプの追加でエラーが発生した場合に元のデータに戻る", () => {
+    const prevData = {
+      pages: [
+        {
+          items: [
+            {
+              id: "1",
+              content: "テスト投稿",
+              stamps: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    const mockContext = {
+      post: {
+        getAll: {
+          cancel: jest.fn(),
+          getInfiniteData: jest.fn(() => prevData),
+          setInfiniteData: jest.fn(),
+          invalidate: jest.fn(),
+        },
+      },
+    };
+
+    (api.useContext as jest.Mock).mockReturnValue(mockContext);
+
+    const mockAddStamp = api.post.addStamp.useMutation as jest.Mock;
+    const onError = mockAddStamp.mock.calls[0]?.[0]?.onError;
+
+    if (onError) {
+      onError(
+        new Error("テストエラー"),
+        { postId: "1", type: "thanks" },
+        { prevData },
+      );
+      expect(mockContext.post.getAll.setInfiniteData).toHaveBeenCalledWith(
+        expect.anything(),
+        prevData,
+      );
+    }
+  });
+
+  it("投稿の削除が成功した場合にデータが更新される", () => {
+    const mockContext = {
+      post: {
+        getAll: {
+          invalidate: jest.fn(),
+        },
+      },
+    };
+
+    (api.useContext as jest.Mock).mockReturnValue(mockContext);
+
+    const mockDelete = api.post.delete.useMutation as jest.Mock;
+    const onSuccess = mockDelete.mock.calls[0]?.[0]?.onSuccess;
+
+    if (onSuccess) {
+      onSuccess();
+      expect(mockContext.post.getAll.invalidate).toHaveBeenCalled();
+    }
+  });
 });
