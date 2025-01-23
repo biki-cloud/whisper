@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "~/utils/api";
 import { type GetAllPostsItem } from "~/types/api";
 import { getEmotionEmoji } from "~/utils/emotions";
+import { type StampType, stampConfig } from "~/utils/stamps";
 
 export function PostList() {
   const utils = api.useContext();
@@ -143,6 +144,45 @@ export function PostList() {
     </div>
   );
 
+  interface StampButtonProps {
+    type: StampType;
+    postId: string;
+    stamps: GetAllPostsItem["stamps"];
+    clientIp: string | undefined;
+    onStampClick: (postId: string, type: StampType) => void;
+    isPending: boolean;
+  }
+
+  function StampButton({
+    type,
+    postId,
+    stamps,
+    clientIp,
+    onStampClick,
+    isPending,
+  }: StampButtonProps) {
+    const isActive = stamps?.some(
+      (stamp) => stamp.type === type && stamp.ipAddress === clientIp,
+    );
+    const count = stamps?.filter((stamp) => stamp.type === type).length ?? 0;
+
+    return (
+      <button
+        onClick={() => onStampClick(postId, type)}
+        className={`inline-flex items-center space-x-1 rounded-md px-2 py-1 ${
+          isActive
+            ? "bg-blue-500 text-white hover:bg-blue-600"
+            : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+        }`}
+        disabled={isPending}
+        aria-label={stampConfig[type].label}
+      >
+        {stampConfig[type].icon}
+        <span>{count}</span>
+      </button>
+    );
+  }
+
   if (!posts.length) {
     return (
       <div className="space-y-4">
@@ -206,68 +246,22 @@ export function PostList() {
             )}
           </div>
           <div className="flex items-center justify-between">
-            <button
-              onClick={() =>
-                addStamp.mutate({ postId: post.id, type: "thanks" })
-              }
-              className={`inline-flex items-center space-x-1 rounded-md px-2 py-1 ${
-                post.stamps?.some(
-                  (stamp) =>
-                    stamp.type === "thanks" && stamp.ipAddress === clientIp,
-                )
-                  ? "bg-blue-500 text-white hover:bg-blue-600"
-                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-              }`}
-              disabled={addStamp.isPending}
-              aria-label="ありがとうボタン"
-            >
-              <span className="text-xl">🙏</span>
-              <span>
-                {post.stamps?.filter((stamp) => stamp.type === "thanks")
-                  .length ?? 0}
-              </span>
-            </button>
-            <button
-              onClick={() =>
-                addStamp.mutate({ postId: post.id, type: "empathy" })
-              }
-              className={`inline-flex items-center space-x-1 rounded-md px-2 py-1 ${
-                post.stamps?.some(
-                  (stamp) =>
-                    stamp.type === "empathy" && stamp.ipAddress === clientIp,
-                )
-                  ? "bg-blue-500 text-white hover:bg-blue-600"
-                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-              }`}
-              disabled={addStamp.isPending}
-              aria-label="共感ボタン"
-            >
-              <svg
-                className="h-5 w-5"
-                fill={
-                  post.stamps?.some(
-                    (stamp) =>
-                      stamp.type === "empathy" && stamp.ipAddress === clientIp,
-                  )
-                    ? "currentColor"
-                    : "none"
-                }
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-              <span>
-                {post.stamps?.filter((stamp) => stamp.type === "empathy")
-                  .length ?? 0}
-              </span>
-            </button>
+            <StampButton
+              type="thanks"
+              postId={post.id}
+              stamps={post.stamps}
+              clientIp={clientIp}
+              onStampClick={(postId, type) => addStamp.mutate({ postId, type })}
+              isPending={addStamp.isPending}
+            />
+            <StampButton
+              type="empathy"
+              postId={post.id}
+              stamps={post.stamps}
+              clientIp={clientIp}
+              onStampClick={(postId, type) => addStamp.mutate({ postId, type })}
+              isPending={addStamp.isPending}
+            />
           </div>
         </div>
       ))}
