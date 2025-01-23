@@ -113,8 +113,8 @@ describe("PostList", () => {
     });
     fireEvent.click(thanksButton);
 
-    const empathyButton = screen.getByRole("button", { name: "共感ボタン" });
-    fireEvent.click(empathyButton);
+    const loveButton = screen.getByRole("button", { name: "大好きボタン" });
+    fireEvent.click(loveButton);
   });
 
   it("ローディング中にスピナーが表示される", () => {
@@ -223,10 +223,10 @@ describe("PostList", () => {
     const thanksButton = screen.getByRole("button", {
       name: "ありがとうボタン",
     });
-    const empathyButton = screen.getByRole("button", { name: "共感ボタン" });
+    const loveButton = screen.getByRole("button", { name: "大好きボタン" });
 
     expect(thanksButton).toBeDisabled();
-    expect(empathyButton).toBeDisabled();
+    expect(loveButton).toBeDisabled();
   });
 
   it("感情タグをクリックするとフィルタリングされる", () => {
