@@ -4,7 +4,8 @@ import { useState } from "react";
 import { api } from "~/utils/api";
 import { type GetAllPostsItem } from "~/types/api";
 import { getEmotionEmoji } from "~/utils/emotions";
-import { type StampType, stampConfig } from "~/utils/stamps";
+import { type StampType } from "~/types/stamps";
+import { stampConfig } from "~/utils/stamps";
 
 export function PostList() {
   const utils = api.useContext();
