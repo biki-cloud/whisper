@@ -116,7 +116,7 @@ export function PostList() {
       <select
         value={emotionTagId ?? ""}
         onChange={(e) => setEmotionTagId(e.target.value || undefined)}
-        className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+        className="rounded-md border border-gray-300 px-3 py-2 pr-8 dark:border-gray-600 dark:bg-gray-700"
         aria-label="すべての感情"
       >
         <option value="">すべての感情</option>
@@ -129,7 +129,7 @@ export function PostList() {
       <select
         value={orderBy}
         onChange={(e) => setOrderBy(e.target.value as "desc" | "asc")}
-        className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700"
+        className="rounded-md border border-gray-300 px-3 py-2 pr-8 dark:border-gray-600 dark:bg-gray-700"
         aria-label="新しい順"
       >
         <option value="desc">新しい順</option>
