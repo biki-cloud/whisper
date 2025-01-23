@@ -111,3 +111,29 @@ Ventは、ユーザーが匿名で1日1回投稿し、他者と共感を共有�
 4. **モデレーション機能**
 
    - 不適切な投稿を自動検知し、非表示にする仕組みを導入。
+
+5. UUID + ローカルストレージ
+   概要: サーバー側でUUID（ユニークな識別子）を生成し、クライアントのローカルストレージに保存します。ユーザーが初回アクセス時にUUIDを生成し、以降は同じ識別子を使用。
+   利点:
+   プライバシーに配慮しながら、同一クライアントを継続的に識別可能。
+   クッキーのようにサーバーに送信されないため、追跡感が薄い。
+   ユーザーが意図的に削除しない限り永続的に保持。
+   注意点: ユーザーがローカルストレージを削除した場合は新しいUUIDを生成。
+   import { v4 as uuidv4 } from 'uuid';
+
+```
+// 初回アクセス時にUUIDを生成し、ローカルストレージに保存
+function getOrCreateClientId() {
+const clientIdKey = 'vent-client-id';
+let clientId = localStorage.getItem(clientIdKey);
+
+if (!clientId) {
+clientId = uuidv4();
+localStorage.setItem(clientIdKey, clientId);
+}
+
+return clientId;
+}
+
+console.log('Your Client ID:', getOrCreateClientId());
+```
