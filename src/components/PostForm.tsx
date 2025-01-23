@@ -61,11 +61,11 @@ export function PostForm() {
             onChange={(e) => setContent(e.target.value)}
             className="min-h-[120px] w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 shadow-sm transition-all duration-200 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
             rows={4}
-            maxLength={500}
+            maxLength={100}
             placeholder="あなたの気持ちや想いを自由に書いてください。誰かがあなたの気持ちに共感するかもしれません..."
           />
           <div className="absolute bottom-2 right-2 text-sm text-gray-500 dark:text-gray-400">
-            {content.length}/500
+            {content.length}/100
           </div>
         </div>
       </div>

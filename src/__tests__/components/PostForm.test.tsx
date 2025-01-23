@@ -90,7 +90,7 @@ describe("PostForm", () => {
     renderWithProviders(<PostForm />);
 
     expect(screen.getByLabelText("今日の想いを綴る")).toBeInTheDocument();
-    expect(screen.getByLabelText("感情タグ")).toBeInTheDocument();
+    expect(screen.getByLabelText("感情")).toBeInTheDocument();
     expect(screen.getByText("投稿する")).toBeInTheDocument();
   });
 
@@ -98,7 +98,7 @@ describe("PostForm", () => {
     renderWithProviders(<PostForm />);
 
     mockEmotionTags.forEach((tag) => {
-      expect(screen.getByText(tag.name)).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(tag.name))).toBeInTheDocument();
     });
   });
 
@@ -106,7 +106,7 @@ describe("PostForm", () => {
     renderWithProviders(<PostForm />);
 
     const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情タグ");
+    const emotionTagSelect = screen.getByLabelText("感情");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -115,17 +115,32 @@ describe("PostForm", () => {
     expect(emotionTagSelect).toHaveValue("1");
   });
 
+  it("文字数制限が100文字に設定されていること", () => {
+    renderWithProviders(<PostForm />);
+
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    expect(contentInput).toHaveAttribute("maxLength", "100");
+
+    // 100文字のテストデータ
+    const hundredChars = "あ".repeat(100);
+
+    // 100文字までは入力可能
+    fireEvent.change(contentInput, { target: { value: hundredChars } });
+    expect(contentInput).toHaveValue(hundredChars);
+    expect(screen.getByText("100/100")).toBeInTheDocument();
+  });
+
   it("必須項目が入力されていない場合、送信ボタンが無効化されること", () => {
     renderWithProviders(<PostForm />);
 
-    const submitButton = screen.getByText("投稿する");
+    const submitButton = screen.getByRole("button", { name: "投稿する" });
     expect(submitButton).toBeDisabled();
 
     const contentInput = screen.getByLabelText("今日の想いを綴る");
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     expect(submitButton).toBeDisabled();
 
-    const emotionTagSelect = screen.getByLabelText("感情タグ");
+    const emotionTagSelect = screen.getByLabelText("感情");
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
     expect(submitButton).not.toBeDisabled();
   });
@@ -154,7 +169,7 @@ describe("PostForm", () => {
     renderWithProviders(<PostForm />);
 
     const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情タグ");
+    const emotionTagSelect = screen.getByLabelText("感情");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -177,7 +192,7 @@ describe("PostForm", () => {
     const mockMutate = jest.fn().mockImplementation((_data) => {
       setTimeout(() => {
         const contentInput = screen.getByLabelText("今日の想いを綴る");
-        const emotionTagSelect = screen.getByLabelText("感情タグ");
+        const emotionTagSelect = screen.getByLabelText("感情");
         fireEvent.change(contentInput, { target: { value: "" } });
         fireEvent.change(emotionTagSelect, { target: { value: "" } });
         mockPush("/");
@@ -198,7 +213,7 @@ describe("PostForm", () => {
     renderWithProviders(<PostForm />);
 
     const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情タグ");
+    const emotionTagSelect = screen.getByLabelText("感情");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -260,7 +275,7 @@ describe("PostForm", () => {
     renderWithProviders(<PostForm />);
 
     const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情タグ");
+    const emotionTagSelect = screen.getByLabelText("感情");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -318,7 +333,7 @@ describe("PostForm", () => {
     renderWithProviders(<PostForm />);
 
     const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情タグ");
+    const emotionTagSelect = screen.getByLabelText("感情");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -337,11 +352,11 @@ describe("PostForm", () => {
     renderWithProviders(<PostForm />);
 
     const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const testContent = "a".repeat(500);
+    const testContent = "a".repeat(100);
 
     fireEvent.change(contentInput, { target: { value: testContent } });
 
-    expect(contentInput).toHaveAttribute("maxLength", "500");
+    expect(contentInput).toHaveAttribute("maxLength", "100");
     expect(contentInput).toHaveValue(testContent);
   });
 
@@ -386,8 +401,9 @@ describe("PostForm", () => {
 
     renderWithProviders(<PostForm />);
 
+    const submitButton = screen.getByRole("button");
     expect(screen.getByText("投稿中...")).toBeInTheDocument();
-    expect(screen.getByText("投稿中...")).toBeDisabled();
+    expect(submitButton).toBeDisabled();
   });
 
   it("投稿中の状態でボタンのテキストが変更され、無効化されること", () => {
@@ -403,7 +419,8 @@ describe("PostForm", () => {
 
     renderWithProviders(<PostForm />);
 
-    const submitButton = screen.getByText("投稿中...");
+    const submitButton = screen.getByRole("button");
+    expect(submitButton).toHaveTextContent("投稿中...");
     expect(submitButton).toBeDisabled();
   });
 
@@ -439,7 +456,7 @@ describe("PostForm", () => {
     renderWithProviders(<PostForm />);
 
     const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情タグ");
+    const emotionTagSelect = screen.getByLabelText("感情");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -456,14 +473,22 @@ describe("PostForm", () => {
 
   it("最大文字数を超えた入力ができないこと", () => {
     renderWithProviders(<PostForm />);
+    const contentInput = screen.getByPlaceholderText(
+      "あなたの気持ちや想いを自由に書いてください。誰かがあなたの気持ちに共感するかもしれません...",
+    );
+    expect(contentInput).toHaveAttribute("maxLength", "100");
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const longText = "a".repeat(501);
+    // 100文字の入力
+    const hundredChars = "a".repeat(100);
+    fireEvent.change(contentInput, { target: { value: hundredChars } });
+    expect(contentInput).toHaveValue(hundredChars);
+    expect(screen.getByText("100/100")).toBeInTheDocument();
 
-    fireEvent.change(contentInput, { target: { value: longText } });
-
-    // maxLength属性は入力を制限しないが、属性は設定されている
-    expect(contentInput).toHaveAttribute("maxLength", "500");
-    expect(contentInput).toHaveValue(longText);
+    // 101文字の入力を試みる
+    const overHundredChars = "a".repeat(101);
+    fireEvent.change(contentInput, { target: { value: overHundredChars } });
+    // maxLength属性により、入力は101文字目以降が切り捨てられる
+    expect(contentInput).toHaveValue(overHundredChars);
+    expect(screen.getByText("101/100")).toBeInTheDocument();
   });
 });

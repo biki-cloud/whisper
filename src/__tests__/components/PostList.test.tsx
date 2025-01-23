@@ -7,6 +7,17 @@ import { api } from "~/utils/api";
 jest.mock("~/utils/api", () => ({
   api: {
     useContext: jest.fn(() => ({})),
+    emotionTag: {
+      getAll: {
+        useQuery: jest.fn(() => ({
+          data: [
+            { id: "clh1234567890", name: "怒り" },
+            { id: "clh1234567891", name: "悲しみ" },
+            { id: "clh1234567892", name: "不安" },
+          ],
+        })),
+      },
+    },
     post: {
       getAll: {
         useInfiniteQuery: jest.fn(() => ({
