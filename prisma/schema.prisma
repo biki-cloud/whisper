@@ -31,10 +31,10 @@ model EmotionTag {
 }
 
 model Stamp {
-  id        String   @id @default(cuid())
-  type      StampType
+  id        String    @id @default(cuid())
+  type      String
   postId    String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   ipAddress String
   post      Post     @relation(fields: [postId], references: [id])
 

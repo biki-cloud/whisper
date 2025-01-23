@@ -48,19 +48,19 @@ export function PostList() {
                   (s) => s.type === type && s.ipAddress === clientIp,
                 );
 
-                const stamps = post.stamps ?? [];
-
                 if (existingStamp) {
                   return {
                     ...post,
-                    stamps: stamps.filter((s) => s.id !== existingStamp.id),
+                    stamps:
+                      post.stamps?.filter((s) => s.id !== existingStamp.id) ??
+                      [],
                   };
                 }
 
                 return {
                   ...post,
                   stamps: [
-                    ...stamps,
+                    ...(post.stamps ?? []),
                     {
                       id: `temp-${Date.now()}`,
                       type,
@@ -85,6 +85,25 @@ export function PostList() {
           context.prevData,
         );
       }
+    },
+    onSuccess: (data, variables) => {
+      // 成功時に特定の投稿のデータを更新
+      utils.post.getAll.setInfiniteData(
+        { limit: 10, emotionTagId, orderBy },
+        (old) => {
+          if (!old) return { pages: [], pageParams: [] };
+
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((post) =>
+                post.id === variables.postId ? data : post,
+              ),
+            })),
+          };
+        },
+      );
     },
     onSettled: () => {
       void utils.post.getAll.invalidate();
