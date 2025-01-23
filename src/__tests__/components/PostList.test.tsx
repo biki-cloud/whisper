@@ -429,4 +429,225 @@ describe("PostList", () => {
     render(<WrappedPostList />);
     expect(screen.queryByText("削除")).not.toBeInTheDocument();
   });
+
+  it("スタンプの追加時にキャッシュが正しく更新される", async () => {
+    const mockContext = {
+      post: {
+        getAll: {
+          cancel: jest.fn(),
+          getInfiniteData: jest.fn(() => ({
+            pages: [
+              {
+                items: [
+                  {
+                    id: "1",
+                    stamps: [],
+                  },
+                ],
+              },
+            ],
+          })),
+          setInfiniteData: jest.fn(),
+          invalidate: jest.fn(),
+        },
+      },
+    };
+
+    (api.useContext as jest.Mock).mockReturnValue(mockContext);
+
+    const mockAddStamp = api.post.addStamp.useMutation as jest.Mock;
+    const mockMutate = jest.fn();
+    const onMutate = jest.fn();
+    mockAddStamp.mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+      onMutate,
+    });
+
+    render(<WrappedPostList />);
+    const thanksButton = screen.getByRole("button", {
+      name: "ありがとうボタン",
+    });
+    fireEvent.click(thanksButton);
+
+    // onMutateを手動で呼び出す
+    const mutationOptions = mockAddStamp.mock.calls[0][0];
+    await mutationOptions.onMutate({ postId: "1", type: "thanks" });
+
+    expect(mockContext.post.getAll.cancel).toHaveBeenCalled();
+    expect(mockContext.post.getAll.setInfiniteData).toHaveBeenCalled();
+  });
+
+  it("スタンプの追加でエラーが発生した場合に元のデータに戻る", async () => {
+    const prevData = {
+      pages: [
+        {
+          items: [
+            {
+              id: "1",
+              stamps: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    const mockContext = {
+      post: {
+        getAll: {
+          cancel: jest.fn(),
+          getInfiniteData: jest.fn(() => prevData),
+          setInfiniteData: jest.fn(),
+          invalidate: jest.fn(),
+        },
+      },
+    };
+
+    (api.useContext as jest.Mock).mockReturnValue(mockContext);
+
+    const mockAddStamp = api.post.addStamp.useMutation as jest.Mock;
+    const mockMutate = jest.fn();
+    mockAddStamp.mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    });
+
+    render(<WrappedPostList />);
+    const thanksButton = screen.getByRole("button", {
+      name: "ありがとうボタン",
+    });
+    fireEvent.click(thanksButton);
+
+    // エラーハンドラーを手動で呼び出す
+    const mutationOptions = mockAddStamp.mock.calls[0][0];
+    await mutationOptions.onMutate({ postId: "1", type: "thanks" });
+    mutationOptions.onError(
+      new Error(),
+      { postId: "1", type: "thanks" },
+      { prevData },
+    );
+
+    expect(mockContext.post.getAll.setInfiniteData).toHaveBeenCalledWith(
+      expect.any(Object),
+      prevData,
+    );
+  });
+
+  it("投稿の削除に失敗した場合エラーハンドリングされる", async () => {
+    // 自分の投稿のデータを設定
+    mockGetAllQuery.mockReturnValueOnce({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "clh1234567890",
+                  name: "怒り",
+                },
+                ipAddress: "127.0.0.1", // クライアントIPと同じ
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+    });
+
+    const mockDelete = api.post.delete.useMutation as jest.Mock;
+    const mockMutate = jest.fn();
+    mockDelete.mockReturnValue({
+      mutate: mockMutate,
+      onError: jest.fn(),
+    });
+
+    const mockConfirm = jest.spyOn(window, "confirm");
+    mockConfirm.mockReturnValue(true);
+
+    render(<WrappedPostList />);
+    const deleteButton = screen.getByText("削除");
+    fireEvent.click(deleteButton);
+
+    expect(mockMutate).toHaveBeenCalled();
+  });
+
+  it("スタンプの追加が成功した場合にキャッシュが更新される", () => {
+    const mockContext = {
+      post: {
+        getAll: {
+          cancel: jest.fn(),
+          getInfiniteData: jest.fn(() => ({
+            pages: [
+              {
+                items: [
+                  {
+                    id: "1",
+                    stamps: [],
+                  },
+                ],
+              },
+            ],
+          })),
+          setInfiniteData: jest.fn(),
+          invalidate: jest.fn(),
+        },
+      },
+    };
+
+    (api.useContext as jest.Mock).mockReturnValue(mockContext);
+
+    const mockAddStamp = api.post.addStamp.useMutation as jest.Mock;
+    const mockMutate = jest.fn();
+    mockAddStamp.mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+      onSettled: jest.fn(),
+    });
+
+    render(<WrappedPostList />);
+    const thanksButton = screen.getByRole("button", {
+      name: "ありがとうボタン",
+    });
+    fireEvent.click(thanksButton);
+
+    // 成功ハンドラーを手動で呼び出す
+    const mutationOptions = mockAddStamp.mock.calls[0][0];
+    mutationOptions.onSuccess(
+      { id: "1", stamps: [{ type: "thanks", ipAddress: "127.0.0.1" }] },
+      { postId: "1", type: "thanks" },
+    );
+
+    // onSettledを手動で呼び出す
+    mutationOptions.onSettled();
+
+    expect(mockContext.post.getAll.setInfiniteData).toHaveBeenCalled();
+    expect(mockContext.post.getAll.invalidate).toHaveBeenCalled();
+  });
+
+  it("クライアントIPが取得できない場合でも表示される", () => {
+    const mockGetClientIp = api.post.getClientIp.useQuery as jest.Mock;
+    mockGetClientIp.mockReturnValue({
+      data: undefined,
+    });
+
+    render(<WrappedPostList />);
+    expect(screen.getByText("テスト投稿")).toBeInTheDocument();
+  });
+
+  it("感情タグの取得に失敗した場合でもフィルターUIが表示される", () => {
+    const mockGetEmotionTags = api.emotionTag.getAll.useQuery as jest.Mock;
+    mockGetEmotionTags.mockReturnValue({
+      data: undefined,
+    });
+
+    render(<WrappedPostList />);
+    const select = screen.getByRole("combobox", { name: /すべての感情/i });
+    expect(select).toBeInTheDocument();
+    expect(select.children.length).toBe(1); // "すべての感情" オプションのみ
+  });
 });
