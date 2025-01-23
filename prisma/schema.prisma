@@ -32,7 +32,7 @@ model EmotionTag {
 
 model Stamp {
   id        String   @id @default(cuid())
-  type      String
+  type      StampType
   postId    String
   createdAt DateTime @default(now())
   ipAddress String
@@ -40,6 +40,15 @@ model Stamp {
 
   @@index([postId])
   @@index([ipAddress])
+}
+
+enum StampType {
+  thanks
+  love
+  smile
+  cry
+  sad
+  shock
 }
 
 model DeletedPost {

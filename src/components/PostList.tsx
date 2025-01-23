@@ -245,23 +245,20 @@ export function PostList() {
               </button>
             )}
           </div>
-          <div className="flex items-center justify-between">
-            <StampButton
-              type="thanks"
-              postId={post.id}
-              stamps={post.stamps}
-              clientIp={clientIp}
-              onStampClick={(postId, type) => addStamp.mutate({ postId, type })}
-              isPending={addStamp.isPending}
-            />
-            <StampButton
-              type="empathy"
-              postId={post.id}
-              stamps={post.stamps}
-              clientIp={clientIp}
-              onStampClick={(postId, type) => addStamp.mutate({ postId, type })}
-              isPending={addStamp.isPending}
-            />
+          <div className="mt-2 flex items-center gap-2">
+            {Object.keys(stampConfig).map((type) => (
+              <StampButton
+                key={type}
+                type={type as StampType}
+                postId={post.id}
+                stamps={post.stamps}
+                clientIp={clientIp}
+                onStampClick={(postId, type) =>
+                  addStamp.mutate({ postId, type })
+                }
+                isPending={addStamp.isPending}
+              />
+            ))}
           </div>
         </div>
       ))}

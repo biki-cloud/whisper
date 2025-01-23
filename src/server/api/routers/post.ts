@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { type Prisma } from "@prisma/client";
+import { type StampType } from "~/utils/stamps";
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -155,7 +156,7 @@ export const postRouter = createTRPCRouter({
     .input(
       z.object({
         postId: z.string(),
-        type: z.enum(["thanks", "empathy"]),
+        type: z.enum(["thanks", "love", "smile", "cry", "sad", "shock"]),
       }),
     )
     .mutation(async ({ ctx, input }) => {

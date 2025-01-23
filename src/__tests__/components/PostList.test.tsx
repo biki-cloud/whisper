@@ -179,7 +179,7 @@ describe("PostList", () => {
                 ipAddress: "127.0.0.1",
                 stamps: [
                   { type: "thanks", ipAddress: "127.0.0.1" },
-                  { type: "empathy", ipAddress: "127.0.0.1" },
+                  { type: "love", ipAddress: "127.0.0.1" },
                   { type: "thanks", ipAddress: "127.0.0.2" },
                 ],
               },
@@ -193,9 +193,9 @@ describe("PostList", () => {
 
     render(<WrappedPostList />);
     const thanksCount = screen.getByText("2");
-    const empathyCount = screen.getByText("1");
+    const loveCount = screen.getByText("1");
     expect(thanksCount).toBeInTheDocument();
-    expect(empathyCount).toBeInTheDocument();
+    expect(loveCount).toBeInTheDocument();
   });
 
   it("削除をキャンセルできる", () => {
@@ -285,7 +285,7 @@ describe("PostList", () => {
                 ipAddress: "127.0.0.1",
                 stamps: [
                   { type: "thanks", ipAddress: "127.0.0.1" },
-                  { type: "empathy", ipAddress: "127.0.0.1" },
+                  { type: "love", ipAddress: "127.0.0.1" },
                 ],
               },
             ],
@@ -300,10 +300,12 @@ describe("PostList", () => {
     const thanksButton = screen.getByRole("button", {
       name: "ありがとうボタン",
     });
-    const empathyButton = screen.getByRole("button", { name: "共感ボタン" });
+    const loveButton = screen.getByRole("button", {
+      name: "大好きボタン",
+    });
 
     expect(thanksButton).toHaveClass("bg-blue-500", "text-white");
-    expect(empathyButton).toHaveClass("bg-blue-500", "text-white");
+    expect(loveButton).toHaveClass("bg-blue-500", "text-white");
   });
 
   it("スタンプの追加後にデータが再取得される", () => {
