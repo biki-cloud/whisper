@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { PostForm } from "~/components/PostForm";
 import { renderWithProviders } from "../utils/test-utils";
 import { api } from "~/utils/api";
 import { TRPCClientError } from "@trpc/client";
-import type { UseTRPCMutationResult } from "@trpc/react-query/shared";
+import type {
+  UseTRPCMutationResult,
+  UseTRPCMutationOptions,
+} from "@trpc/react-query/shared";
 import type { TRPCClientErrorLike } from "@trpc/client";
 
 type Post = {
@@ -68,11 +71,11 @@ jest.mock("~/utils/api", () => ({
     },
     post: {
       create: {
-        useMutation: () => ({
+        useMutation: jest.fn().mockImplementation(() => ({
           mutate: mockCreatePost,
           isPending: false,
           trpc: { path: "post.create" },
-        }),
+        })),
       },
     },
   },
@@ -102,12 +105,8 @@ describe("PostForm", () => {
   it("フォームの入力が正しく動作すること", () => {
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText(
-      "今日の想いを綴る",
-    ) as HTMLTextAreaElement;
-    const emotionTagSelect = screen.getByLabelText(
-      "感情タグ",
-    ) as HTMLSelectElement;
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    const emotionTagSelect = screen.getByLabelText("感情タグ");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -122,15 +121,11 @@ describe("PostForm", () => {
     const submitButton = screen.getByText("投稿する");
     expect(submitButton).toBeDisabled();
 
-    const contentInput = screen.getByLabelText(
-      "今日の想いを綴る",
-    ) as HTMLTextAreaElement;
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     expect(submitButton).toBeDisabled();
 
-    const emotionTagSelect = screen.getByLabelText(
-      "感情タグ",
-    ) as HTMLSelectElement;
+    const emotionTagSelect = screen.getByLabelText("感情タグ");
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
     expect(submitButton).not.toBeDisabled();
   });
@@ -142,90 +137,66 @@ describe("PostForm", () => {
       isPending: false,
       isError: false,
       error: null,
-      data: undefined,
-      variables: undefined,
       trpc: { path: "post.create" },
-    } as unknown as UseTRPCMutationResult<
-      Post,
-      TRPCClientErrorLike<any>,
-      CreatePostInput,
-      unknown
-    >;
+    };
 
-    jest
-      .spyOn(api.post.create, "useMutation")
-      .mockReturnValue(mockMutationResult);
+    (api.post.create.useMutation as jest.Mock).mockImplementation(
+      (options: any) => {
+        mockMutate.mockImplementation((data: any) => {
+          setTimeout(() => {
+            options.onSuccess?.();
+          }, 0);
+        });
+        return mockMutationResult;
+      },
+    );
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText(
-      "今日の想いを綴る",
-    ) as HTMLTextAreaElement;
-    const emotionTagSelect = screen.getByLabelText(
-      "感情タグ",
-    ) as HTMLSelectElement;
-    const submitButton = screen.getByText("投稿する");
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    const emotionTagSelect = screen.getByLabelText("感情タグ");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
-    fireEvent.click(submitButton);
 
-    expect(mockMutate).toHaveBeenCalledWith({
-      content: "テスト投稿",
-      emotionTagId: "1",
+    fireEvent.click(screen.getByText("投稿する"));
+
+    await waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith({
+        content: "テスト投稿",
+        emotionTagId: "1",
+      });
+      expect(contentInput).toHaveValue("");
+      expect(emotionTagSelect).toHaveValue("");
+      expect(mockPush).toHaveBeenCalledWith("/");
+      expect(mockInvalidate).toHaveBeenCalled();
     });
   });
 
   it("投稿成功時に適切な処理が行われること", async () => {
     const mockMutate = jest.fn().mockImplementation((data) => {
-      // フォームをリセット
-      const contentInput = screen.getByLabelText(
-        "今日の想いを綴る",
-      ) as HTMLTextAreaElement;
-      const emotionTagSelect = screen.getByLabelText(
-        "感情タグ",
-      ) as HTMLSelectElement;
-      fireEvent.change(contentInput, { target: { value: "" } });
-      fireEvent.change(emotionTagSelect, { target: { value: "" } });
-      mockPush("/");
-      mockInvalidate();
+      setTimeout(() => {
+        const contentInput = screen.getByLabelText("今日の想いを綴る");
+        const emotionTagSelect = screen.getByLabelText("感情タグ");
+        fireEvent.change(contentInput, { target: { value: "" } });
+        fireEvent.change(emotionTagSelect, { target: { value: "" } });
+        mockPush("/");
+        mockInvalidate();
+      }, 0);
     });
 
-    const mockMutationResult = {
+    (api.post.create.useMutation as jest.Mock).mockReturnValue({
       mutate: mockMutate,
-      mutateAsync: jest.fn(),
       isPending: false,
       isError: false,
       error: null,
-      data: undefined,
-      variables: undefined,
       trpc: { path: "post.create" },
-      isIdle: true,
-      isSuccess: false,
-      status: "idle",
-      reset: jest.fn(),
-      failureCount: 0,
-      failureReason: null,
-      isPaused: false,
-    } as unknown as UseTRPCMutationResult<
-      Post,
-      TRPCClientErrorLike<any>,
-      CreatePostInput,
-      unknown
-    >;
-
-    jest
-      .spyOn(api.post.create, "useMutation")
-      .mockReturnValue(mockMutationResult);
+    });
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText(
-      "今日の想いを綴る",
-    ) as HTMLTextAreaElement;
-    const emotionTagSelect = screen.getByLabelText(
-      "感情タグ",
-    ) as HTMLSelectElement;
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    const emotionTagSelect = screen.getByLabelText("感情タグ");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -252,26 +223,13 @@ describe("PostForm", () => {
       configurable: true,
     });
 
-    const mockMutate = jest.fn().mockImplementation(() => {
-      // エラーメッセージを表示
-      const errorDiv = document.createElement("div");
-      errorDiv.setAttribute("role", "alert");
-      errorDiv.innerHTML = `
-        <p data-testid="error-message" class="text-sm text-red-700 dark:text-red-200">
-          1日1回までしか投稿できません。
-        </p>
-      `;
-      const form = screen.getByTestId("post-form");
-      form.appendChild(errorDiv);
-    });
-
+    const mockMutate = jest.fn().mockRejectedValue(mockError);
     const mockMutationResult = {
       mutate: mockMutate,
       mutateAsync: jest.fn(),
       isPending: false,
       isError: true,
       error: mockError,
-      data: undefined,
       variables: undefined,
       trpc: { path: "post.create" },
       isIdle: false,
@@ -288,18 +246,19 @@ describe("PostForm", () => {
       unknown
     >;
 
-    jest
-      .spyOn(api.post.create, "useMutation")
-      .mockReturnValue(mockMutationResult);
+    api.post.create.useMutation.mockImplementation(
+      (options: UseTRPCMutationOptions<any, any, any, any>) => {
+        mockMutate.mockImplementation(() => {
+          setTimeout(() => options.onError?.(mockError), 0);
+        });
+        return mockMutationResult;
+      },
+    );
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText(
-      "今日の想いを綴る",
-    ) as HTMLTextAreaElement;
-    const emotionTagSelect = screen.getByLabelText(
-      "感情タグ",
-    ) as HTMLSelectElement;
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    const emotionTagSelect = screen.getByLabelText("感情タグ");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -322,26 +281,13 @@ describe("PostForm", () => {
       configurable: true,
     });
 
-    const mockMutate = jest.fn().mockImplementation(() => {
-      // エラーメッセージを表示
-      const errorDiv = document.createElement("div");
-      errorDiv.setAttribute("role", "alert");
-      errorDiv.innerHTML = `
-        <p data-testid="error-message" class="text-sm text-red-700 dark:text-red-200">
-          投稿に失敗しました。もう一度お試しください。
-        </p>
-      `;
-      const form = screen.getByTestId("post-form");
-      form.appendChild(errorDiv);
-    });
-
+    const mockMutate = jest.fn().mockRejectedValue(mockError);
     const mockMutationResult = {
       mutate: mockMutate,
       mutateAsync: jest.fn(),
       isPending: false,
       isError: true,
       error: mockError,
-      data: undefined,
       variables: undefined,
       trpc: { path: "post.create" },
       isIdle: false,
@@ -358,18 +304,19 @@ describe("PostForm", () => {
       unknown
     >;
 
-    jest
-      .spyOn(api.post.create, "useMutation")
-      .mockReturnValue(mockMutationResult);
+    api.post.create.useMutation.mockImplementation(
+      (options: UseTRPCMutationOptions<any, any, any, any>) => {
+        mockMutate.mockImplementation(() => {
+          setTimeout(() => options.onError?.(mockError), 0);
+        });
+        return mockMutationResult;
+      },
+    );
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText(
-      "今日の想いを綴る",
-    ) as HTMLTextAreaElement;
-    const emotionTagSelect = screen.getByLabelText(
-      "感情タグ",
-    ) as HTMLSelectElement;
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    const emotionTagSelect = screen.getByLabelText("感情タグ");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -387,15 +334,13 @@ describe("PostForm", () => {
   it("文字数制限が正しく機能すること", () => {
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText(
-      "今日の想いを綴る",
-    ) as HTMLTextAreaElement;
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
     const testContent = "a".repeat(500);
 
     fireEvent.change(contentInput, { target: { value: testContent } });
 
     expect(contentInput).toHaveAttribute("maxLength", "500");
-    expect(contentInput.value.length).toBeLessThanOrEqual(500);
+    expect(contentInput).toHaveValue(testContent);
   });
 
   it("フォーム送信時にpreventDefaultが呼ばれること", () => {
@@ -419,7 +364,6 @@ describe("PostForm", () => {
     const mockMutationResult = {
       mutate: mockCreatePost,
       isPending: true,
-      data: undefined,
       error: null,
       isError: false,
       reset: jest.fn(),
@@ -473,23 +417,27 @@ describe("PostForm", () => {
     };
 
     (api.post.create.useMutation as jest.Mock).mockImplementation(
-      ({ onSuccess }) => {
-        mockMutate.mockImplementation(() => {
-          setTimeout(() => onSuccess(), 0);
-          return Promise.resolve();
-        });
-        return mockMutationResult;
+      (options: any) => {
+        const mutate = (data: any) => {
+          mockMutate(data);
+          setTimeout(() => {
+            options.onSuccess?.();
+          }, 0);
+        };
+        return {
+          mutate,
+          isPending: false,
+          isError: false,
+          error: null,
+          trpc: { path: "post.create" },
+        };
       },
     );
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText(
-      "今日の想いを綴る",
-    ) as HTMLTextAreaElement;
-    const emotionTagSelect = screen.getByLabelText(
-      "感情タグ",
-    ) as HTMLSelectElement;
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    const emotionTagSelect = screen.getByLabelText("感情タグ");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     fireEvent.change(emotionTagSelect, { target: { value: "1" } });
@@ -507,15 +455,13 @@ describe("PostForm", () => {
   it("最大文字数を超えた入力ができないこと", () => {
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText(
-      "今日の想いを綴る",
-    ) as HTMLTextAreaElement;
+    const contentInput = screen.getByLabelText("今日の想いを綴る");
     const longText = "a".repeat(501);
 
     fireEvent.change(contentInput, { target: { value: longText } });
 
-    // maxLength属性により、入力は500文字に制限される
+    // maxLength属性は入力を制限しないが、属性は設定されている
     expect(contentInput).toHaveAttribute("maxLength", "500");
-    expect(contentInput.value.length).toBe(501); // 実際の入力値は501文字
+    expect(contentInput).toHaveValue(longText);
   });
 });
