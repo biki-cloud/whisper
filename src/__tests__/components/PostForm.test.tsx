@@ -248,8 +248,8 @@ describe("PostForm", () => {
       unknown
     >;
 
-    api.post.create.useMutation.mockImplementation(
-      (options: UseTRPCMutationOptions<any, any, any, any>) => {
+    (api.post.create.useMutation as jest.Mock).mockImplementation(
+      (options: any, context: any, router: any) => {
         mockMutate.mockImplementation(() => {
           setTimeout(() => options.onError?.(mockError), 0);
         });
@@ -306,8 +306,8 @@ describe("PostForm", () => {
       unknown
     >;
 
-    api.post.create.useMutation.mockImplementation(
-      (options: UseTRPCMutationOptions<any, any, any, any>) => {
+    (api.post.create.useMutation as jest.Mock).mockImplementation(
+      (options: any, context: any, router: any) => {
         mockMutate.mockImplementation(() => {
           setTimeout(() => options.onError?.(mockError), 0);
         });
