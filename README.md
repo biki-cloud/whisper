@@ -137,3 +137,5 @@ return clientId;
 
 console.log('Your Client ID:', getOrCreateClientId());
 ```
+
+今のIPアドレスをclientIDに変更するイメージ
