@@ -29,12 +29,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon512_rounded.png"></link>
         <meta name="theme-color" content="#b8e986" />
       </head>
-      <body
-        className={`font-sans ${inter.variable} bg-gray-50 dark:bg-gray-900`}
-      >
+      <body className={`font-sans ${inter.variable}`}>
         <TRPCReactProvider>
-          <Navbar />
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <div className="flex-1 pb-16 md:pb-0 md:pt-16">{children}</div>
+          </div>
         </TRPCReactProvider>
         <Analytics />
       </body>
