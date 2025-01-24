@@ -52,5 +52,5 @@ yarn-error.log*
 **/public/workbox-*.js.map
 .swc
 
-.env.local
-.env.prod
+.env.dev
+.env.prd
