@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "~/lib/utils";
 import { motion } from "framer-motion";
-import { Home, MessageCircle, PenSquare } from "lucide-react";
+import { Home, MessageCircle, PenSquare, Wind } from "lucide-react";
 
 const navigation = [
   { name: "ホーム", href: "/", icon: Home },
@@ -16,15 +16,18 @@ export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-background/80 fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-lg md:bottom-auto md:top-0 md:border-b md:border-t-0">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-lg md:bottom-auto md:top-0 md:border-b md:border-t-0">
       <div className="mx-auto max-w-screen-xl px-4">
         <div className="flex h-16 items-center justify-between">
           <div className="hidden md:flex md:items-center md:gap-2">
             <Link
               href="/"
-              className="text-primary text-xl font-bold tracking-tight"
+              className="group flex items-center gap-1.5 text-xl font-bold tracking-tight"
             >
-              Vent
+              <Wind className="h-5 w-5 text-primary transition-transform group-hover:rotate-12" />
+              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent transition-all duration-300 ease-in-out group-hover:tracking-wider">
+                Vent
+              </span>
             </Link>
           </div>
           <div className="flex w-full items-center justify-around md:w-auto md:justify-end md:gap-2">
@@ -44,7 +47,7 @@ export function Navbar() {
                   {isActive && (
                     <motion.div
                       layoutId="bubble"
-                      className="bg-muted absolute inset-0 z-[-1] rounded-lg"
+                      className="absolute inset-0 z-[-1] rounded-lg bg-muted"
                       transition={{
                         type: "spring",
                         bounce: 0.2,
