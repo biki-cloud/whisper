@@ -22,11 +22,12 @@ export const postRouter = createTRPCRouter({
       const now = new Date();
       const jstOffset = 9 * 60; // UTC+9の分単位のオフセット
       const today = new Date(now.getTime() + jstOffset * 60 * 1000);
-      today.setUTCHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      today.setTime(today.getTime() - jstOffset * 60 * 1000); // UTCに戻す
 
       // 明日の開始時刻（00:00:00）を取得
       const tomorrow = new Date(today);
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
       // 同じ匿名IDからの当日の投稿をチェック
       const existingPosts = await ctx.db.post.findMany({
@@ -116,10 +117,14 @@ export const postRouter = createTRPCRouter({
       // 今日の投稿のみを取得（日本時間）
       const now = new Date();
       const jstOffset = 9 * 60; // UTC+9の分単位のオフセット
+
+      // 日本時間の0時0分0秒を取得
       const today = new Date(now.getTime() + jstOffset * 60 * 1000);
-      today.setUTCHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      today.setTime(today.getTime() - jstOffset * 60 * 1000); // UTCに戻す
+
       const tomorrow = new Date(today);
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
       where.createdAt = {
         gte: today,
