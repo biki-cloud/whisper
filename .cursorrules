@@ -52,4 +52,8 @@ About the Test
 - After modifying the test code, be sure to run/modify it repeatedly until the test is successful.
 - Try to resolve type errors as much as possible.
 
+About environment variable
+
+- in local and dev enviroment, we use .env.dev environment file.
+
 Follow Next.js docs for Data Fetching, Rendering, and Routing.
