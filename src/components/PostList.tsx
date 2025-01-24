@@ -109,9 +109,6 @@ export function PostList() {
         },
       );
     },
-    onSettled: () => {
-      void utils.post.getAll.invalidate();
-    },
   });
 
   const deletePost = api.post.delete.useMutation({
