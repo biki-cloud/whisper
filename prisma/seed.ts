@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { v4 as uuidv4 } from "uuid";
 
 const prisma = new PrismaClient();
 
@@ -43,21 +44,21 @@ async function main() {
       data: {
         content: "今日は晴れて気持ちがいい一日でした！",
         emotionTagId: emotionTags[0].id, // 嬉しい
-        anonymousId: "anonymous-1",
+        anonymousId: uuidv4(),
       },
     }),
     prisma.post.create({
       data: {
         content: "友達と遊園地に行って楽しかった！",
         emotionTagId: emotionTags[1].id, // 楽しい
-        anonymousId: "anonymous-2",
+        anonymousId: uuidv4(),
       },
     }),
     prisma.post.create({
       data: {
         content: "大切なものをなくしてしまった...",
         emotionTagId: emotionTags[2].id, // 悲しい
-        anonymousId: "anonymous-3",
+        anonymousId: uuidv4(),
       },
     }),
   ]);
