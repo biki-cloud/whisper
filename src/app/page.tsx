@@ -1,4 +1,5 @@
-import { PostList } from "~/components/PostList";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -6,7 +7,7 @@ import {
   AccordionTrigger,
 } from "~/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Sparkles } from "lucide-react";
+import { Button } from "~/components/ui/button";
 
 export default function Home() {
   return (
@@ -24,7 +25,7 @@ export default function Home() {
               あなたの想いを、自由に。安全に。
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="about" className="border-muted border-b">
                 <AccordionTrigger className="hover:text-primary text-lg font-medium">
@@ -103,12 +104,17 @@ export default function Home() {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+
+            <div className="flex justify-center gap-4">
+              <Button asChild size="lg">
+                <Link href="/posts">みんなの投稿を見る</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/post/new">投稿してみる</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
-
-        <div className="mx-auto max-w-2xl">
-          <PostList />
-        </div>
       </div>
     </main>
   );
