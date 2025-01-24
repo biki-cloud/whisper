@@ -139,3 +139,33 @@ console.log('Your Client ID:', getOrCreateClientId());
 ```
 
 今のIPアドレスをclientIDに変更するイメージ
+
+匿名のユーザ識別子に今はipaddressを使用していますが、こちらを以下のように変更してください。5. UUID + ローカルストレージ
+概要: サーバー側でUUID（ユニークな識別子）を生成し、クライアントのローカルストレージに保存します。ユーザーが初回アクセス時にUUIDを生成し、以降は同じ識別子を使用。
+利点:
+プライバシーに配慮しながら、同一クライアントを継続的に識別可能。
+クッキーのようにサーバーに送信されないため、追跡感が薄い。
+ユーザーが意図的に削除しない限り永続的に保持。
+注意点: ユーザーがローカルストレージを削除した場合は新しいUUIDを生成。
+こんな感じの実装になりそう。簡単に。
+
+```
+import { v4 as uuidv4 } from 'uuid';
+
+// 初回アクセス時にUUIDを生成し、ローカルストレージに保存
+function getOrCreateAnonymousId() {
+const anonymousIdKey = 'vent-anonymous-id';
+let anonymousId = localStorage.getItem(anonymousIdKey);
+
+if (!anonymousId) {
+anonymousId = uuidv4();
+localStorage.setItem(anonymousIdKey, anonymousId);
+}
+
+return anonymousId;
+}
+
+console.log('Your Client ID:', getOrCreateAnonymousId());
+```
+
+今のIPアドレスをanonymousIdに変更するイメージ
