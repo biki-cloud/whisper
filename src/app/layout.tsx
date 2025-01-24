@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { Navbar } from "~/components/Navbar";
+import { Footer } from "~/components/Footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,6 +35,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <div className="flex-1 pb-16 md:pb-0 md:pt-16">{children}</div>
+            <Footer />
           </div>
         </TRPCReactProvider>
         <Analytics />

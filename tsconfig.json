@@ -26,7 +26,8 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "@/*": ["./src/*"]
     },
     "typeRoots": ["./node_modules/@types", "./types"],
     "allowImportingTsExtensions": true
