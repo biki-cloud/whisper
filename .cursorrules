@@ -57,4 +57,8 @@ About environment variable
 - in local and dev environment, we use .env.dev environment file.
 - in production environment, we use .env.prd environment file.
 
+Abount nodes command
+
+- if there is a command that you want to execute in package.json, you should use it's command.
+
 Follow Next.js docs for Data Fetching, Rendering, and Routing.
