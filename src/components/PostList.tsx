@@ -127,7 +127,7 @@ export function PostList() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="text-primary h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -135,8 +135,8 @@ export function PostList() {
   const posts = data?.pages.flatMap((page) => page.items) ?? [];
 
   const filterUI = (
-    <div className="bg-background/80 sticky top-0 z-10 mb-6 space-y-4 rounded-lg p-4 shadow-sm backdrop-blur-sm">
-      <div className="text-muted-foreground flex items-center gap-2 text-sm">
+    <div className="sticky top-0 z-10 mb-6 space-y-4 rounded-lg bg-background/80 p-4 shadow-sm backdrop-blur-sm">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Filter className="h-4 w-4" />
         <span>フィルター</span>
       </div>
@@ -144,7 +144,7 @@ export function PostList() {
         <select
           value={emotionTagId ?? ""}
           onChange={(e) => setEmotionTagId(e.target.value || undefined)}
-          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
+          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           aria-label="すべての感情"
         >
           <option value="">すべての感情</option>
@@ -157,25 +157,24 @@ export function PostList() {
             );
           })}
         </select>
-        <select
-          value={orderBy}
-          onChange={(e) => setOrderBy(e.target.value as "desc" | "asc")}
-          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
-          aria-label="新しい順"
-        >
-          <option value="desc">
-            <span className="flex items-center gap-2">
-              <SortDesc className="h-4 w-4" />
-              新しい順
-            </span>
-          </option>
-          <option value="asc">
-            <span className="flex items-center gap-2">
-              <SortAsc className="h-4 w-4" />
-              古い順
-            </span>
-          </option>
-        </select>
+        <div className="relative flex-1">
+          <select
+            value={orderBy}
+            onChange={(e) => setOrderBy(e.target.value as "desc" | "asc")}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label="新しい順"
+          >
+            <option value="desc">新しい順</option>
+            <option value="asc">古い順</option>
+          </select>
+          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+            {orderBy === "desc" ? (
+              <SortDesc className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <SortAsc className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -208,7 +207,7 @@ export function PostList() {
         onClick={() => onStampClick(postId, type)}
         className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ${
           isActive
-            ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+            ? "bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
             : "bg-muted hover:bg-muted/80"
         }`}
         disabled={isPending}
@@ -224,7 +223,7 @@ export function PostList() {
     return (
       <div className="space-y-4">
         {filterUI}
-        <div className="text-muted-foreground flex h-64 items-center justify-center">
+        <div className="flex h-64 items-center justify-center text-muted-foreground">
           投稿がありません
         </div>
       </div>
@@ -242,7 +241,7 @@ export function PostList() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
           >
-            <Card className="from-card to-muted/50 group overflow-hidden border-none bg-gradient-to-br shadow-md transition-all duration-200 hover:shadow-lg">
+            <Card className="group overflow-hidden border-none bg-gradient-to-br from-card to-muted/50 shadow-md transition-all duration-200 hover:shadow-lg">
               <CardContent className="p-6">
                 <p className="mb-4 text-lg leading-relaxed">{post.content}</p>
                 <div className="mb-4 flex items-center justify-between">
@@ -263,7 +262,7 @@ export function PostList() {
                     </span>
                     {post.emotionTag.name}
                   </button>
-                  <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <time dateTime={new Date(post.createdAt).toISOString()}>
                       {new Date(post.createdAt).toLocaleTimeString("ja-JP", {
                         hour: "2-digit",
