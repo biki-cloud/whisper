@@ -264,7 +264,7 @@ export function PostList() {
             )}
           </div>
           <div className="mt-4 flex gap-2">
-            {Object.entries(stampConfig).map(([type, config]) => (
+            {Object.entries(stampConfig).map(([type]) => (
               <StampButton
                 key={type}
                 type={type as StampType}
