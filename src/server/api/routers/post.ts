@@ -28,7 +28,7 @@ export const postRouter = createTRPCRouter({
       const tomorrow = new Date(today);
       tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
-      // 同じIPアドレスからの当日の投稿をチェック
+      // 同じ匿名IDからの当日の投稿をチェック
       const existingPosts = await ctx.db.post.findMany({
         where: {
           AND: [
@@ -39,7 +39,7 @@ export const postRouter = createTRPCRouter({
               },
             },
             {
-              ipAddress: ctx.ip,
+              anonymousId: ctx.anonymousId,
             },
           ],
         },
@@ -64,7 +64,7 @@ export const postRouter = createTRPCRouter({
               },
             },
             {
-              ipAddress: ctx.ip,
+              anonymousId: ctx.anonymousId,
             },
           ],
         },
@@ -83,7 +83,7 @@ export const postRouter = createTRPCRouter({
         data: {
           content: input.content,
           emotionTagId: input.emotionTagId,
-          ipAddress: ctx.ip,
+          anonymousId: ctx.anonymousId,
         },
         include: {
           emotionTag: true,
@@ -176,12 +176,12 @@ export const postRouter = createTRPCRouter({
         });
       }
 
-      // 同じIPアドレスからの同じ投稿への同じタイプのスタンプをチェック
+      // 同じ匿名IDからの同じ投稿への同じタイプのスタンプをチェック
       const existingStamp = await ctx.db.stamp.findFirst({
         where: {
           postId: input.postId,
           type: input.type,
-          ipAddress: ctx.ip,
+          anonymousId: ctx.anonymousId,
         },
       });
 
@@ -198,7 +198,7 @@ export const postRouter = createTRPCRouter({
           data: {
             postId: input.postId,
             type: input.type,
-            ipAddress: ctx.ip,
+            anonymousId: ctx.anonymousId,
           },
         });
       }
@@ -222,8 +222,8 @@ export const postRouter = createTRPCRouter({
       return updatedPost;
     }),
 
-  getClientIp: publicProcedure.query(({ ctx }) => {
-    return ctx.ip;
+  getClientId: publicProcedure.query(({ ctx }) => {
+    return ctx.anonymousId;
   }),
 
   delete: publicProcedure
@@ -241,7 +241,7 @@ export const postRouter = createTRPCRouter({
         });
       }
 
-      if (post.ipAddress !== ctx.ip) {
+      if (post.anonymousId !== ctx.anonymousId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "この投稿を削除する権限がありません",
@@ -256,7 +256,7 @@ export const postRouter = createTRPCRouter({
       // 削除記録を作成
       await ctx.db.deletedPost.create({
         data: {
-          ipAddress: ctx.ip,
+          anonymousId: ctx.anonymousId,
         },
       });
 

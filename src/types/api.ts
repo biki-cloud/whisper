@@ -21,7 +21,7 @@ export type GetAllPostsItem = {
   content: string;
   createdAt: Date;
   emotionTagId: string;
-  ipAddress: string;
+  anonymousId: string;
   emotionTag: {
     id: string;
     name: string;
@@ -29,7 +29,7 @@ export type GetAllPostsItem = {
   stamps: Array<{
     id: string;
     type: string;
-    ipAddress: string;
+    anonymousId: string;
   }>;
 };
 

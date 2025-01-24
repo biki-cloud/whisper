@@ -46,7 +46,7 @@ export function PostList() {
                 if (post.id !== postId) return post;
 
                 const existingStamp = post.stamps?.find(
-                  (s) => s.type === type && s.ipAddress === clientIp,
+                  (s) => s.type === type && s.anonymousId === clientId,
                 );
 
                 if (existingStamp) {
@@ -65,7 +65,7 @@ export function PostList() {
                     {
                       id: `temp-${Date.now()}`,
                       type,
-                      ipAddress: clientIp ?? "",
+                      anonymousId: clientId ?? "",
                       postId,
                       createdAt: new Date(),
                     },
@@ -117,7 +117,7 @@ export function PostList() {
     },
   });
 
-  const { data: clientIp } = api.post.getClientIp.useQuery();
+  const { data: clientId } = api.post.getClientId.useQuery();
 
   const { data: emotionTags } = api.emotionTag.getAll.useQuery();
 
@@ -168,7 +168,7 @@ export function PostList() {
     type: StampType;
     postId: string;
     stamps: GetAllPostsItem["stamps"];
-    clientIp: string | undefined;
+    clientId: string | undefined;
     onStampClick: (postId: string, type: StampType) => void;
     isPending: boolean;
   }
@@ -177,12 +177,12 @@ export function PostList() {
     type,
     postId,
     stamps,
-    clientIp,
+    clientId,
     onStampClick,
     isPending,
   }: StampButtonProps) {
     const isActive = stamps?.some(
-      (stamp) => stamp.type === type && stamp.ipAddress === clientIp,
+      (stamp) => stamp.type === type && stamp.anonymousId === clientId,
     );
     const count = stamps?.filter((stamp) => stamp.type === type).length ?? 0;
 
@@ -246,7 +246,7 @@ export function PostList() {
               </span>
               {post.emotionTag.name}
             </button>
-            {clientIp === post.ipAddress && (
+            {clientId === post.anonymousId && (
               <button
                 onClick={() => {
                   if (
@@ -254,25 +254,23 @@ export function PostList() {
                       "この投稿を削除してもよろしいですか？ 本日の再投稿はできません。",
                     )
                   ) {
-                    deletePost.mutate({
-                      postId: post.id,
-                    });
+                    deletePost.mutate({ postId: post.id });
                   }
                 }}
-                className="text-sm text-red-500 hover:text-red-600"
+                className="text-sm text-red-500 hover:text-red-700"
               >
                 削除
               </button>
             )}
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            {Object.keys(stampConfig).map((type) => (
+          <div className="mt-4 flex gap-2">
+            {Object.entries(stampConfig).map(([type, config]) => (
               <StampButton
                 key={type}
                 type={type as StampType}
                 postId={post.id}
                 stamps={post.stamps}
-                clientIp={clientIp}
+                clientId={clientId}
                 onStampClick={(postId, type) =>
                   addStamp.mutate({ postId, type })
                 }

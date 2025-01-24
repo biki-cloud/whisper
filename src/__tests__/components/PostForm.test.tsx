@@ -16,7 +16,7 @@ type Post = {
   content: string;
   emotionTagId: string;
   createdAt: Date;
-  ipAddress: string;
+  anonymousId: string;
   emotionTag: {
     id: string;
     name: string;
@@ -26,7 +26,7 @@ type Post = {
     type: string;
     postId: string;
     createdAt: Date;
-    ipAddress: string;
+    anonymousId: string;
   }[];
 };
 

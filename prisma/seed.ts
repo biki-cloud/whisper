@@ -43,21 +43,21 @@ async function main() {
       data: {
         content: "今日は晴れて気持ちがいい一日でした！",
         emotionTagId: emotionTags[0].id, // 嬉しい
-        ipAddress: "127.0.0.1",
+        anonymousId: "anonymous-1",
       },
     }),
     prisma.post.create({
       data: {
         content: "友達と遊園地に行って楽しかった！",
         emotionTagId: emotionTags[1].id, // 楽しい
-        ipAddress: "127.0.0.1",
+        anonymousId: "anonymous-2",
       },
     }),
     prisma.post.create({
       data: {
         content: "大切なものをなくしてしまった...",
         emotionTagId: emotionTags[2].id, // 悲しい
-        ipAddress: "127.0.0.1",
+        anonymousId: "anonymous-3",
       },
     }),
   ]);

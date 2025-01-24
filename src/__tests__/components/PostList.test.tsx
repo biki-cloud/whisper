@@ -33,7 +33,7 @@ jest.mock("~/utils/api", () => ({
                       id: "clh1234567890",
                       name: "怒り",
                     },
-                    ipAddress: "127.0.0.1",
+                    anonymousId: "anonymous-1",
                     stamps: [],
                   },
                 ],
@@ -44,9 +44,9 @@ jest.mock("~/utils/api", () => ({
           isLoading: false,
         })),
       },
-      getClientIp: {
+      getClientId: {
         useQuery: jest.fn(() => ({
-          data: "127.0.0.1",
+          data: "anonymous-1",
         })),
       },
       addStamp: {
@@ -176,11 +176,11 @@ describe("PostList", () => {
                   id: "clh1234567890",
                   name: "怒り",
                 },
-                ipAddress: "127.0.0.1",
+                anonymousId: "anonymous-1",
                 stamps: [
-                  { type: "thanks", ipAddress: "127.0.0.1" },
-                  { type: "love", ipAddress: "127.0.0.1" },
-                  { type: "thanks", ipAddress: "127.0.0.2" },
+                  { type: "thanks", anonymousId: "anonymous-1" },
+                  { type: "love", anonymousId: "anonymous-1" },
+                  { type: "thanks", anonymousId: "anonymous-2" },
                 ],
               },
             ],
@@ -253,7 +253,7 @@ describe("PostList", () => {
                   id: "clh1234567890",
                   name: "怒り",
                 },
-                ipAddress: "127.0.0.1",
+                anonymousId: "anonymous-1",
                 stamps: [],
               },
             ],
@@ -282,10 +282,10 @@ describe("PostList", () => {
                   id: "clh1234567890",
                   name: "怒り",
                 },
-                ipAddress: "127.0.0.1",
+                anonymousId: "anonymous-1",
                 stamps: [
-                  { type: "thanks", ipAddress: "127.0.0.1" },
-                  { type: "love", ipAddress: "127.0.0.1" },
+                  { type: "thanks", anonymousId: "anonymous-1" },
+                  { type: "love", anonymousId: "anonymous-1" },
                 ],
               },
             ],
@@ -386,7 +386,7 @@ describe("PostList", () => {
                   id: "clh1234567890",
                   name: "怒り",
                 },
-                ipAddress: "192.168.1.1", // 異なるIPアドレス
+                anonymousId: "anonymous-2",
                 stamps: [],
               },
             ],
@@ -415,7 +415,7 @@ describe("PostList", () => {
                   id: "clh1234567890",
                   name: "怒り",
                 },
-                ipAddress: "192.168.1.1", // 異なるIPアドレス
+                anonymousId: "anonymous-2",
                 stamps: [],
               },
             ],
@@ -548,7 +548,7 @@ describe("PostList", () => {
                   id: "clh1234567890",
                   name: "怒り",
                 },
-                ipAddress: "127.0.0.1", // クライアントIPと同じ
+                anonymousId: "anonymous-1",
                 stamps: [],
               },
             ],
@@ -618,7 +618,7 @@ describe("PostList", () => {
     // 成功ハンドラーを手動で呼び出す
     const mutationOptions = mockAddStamp.mock.calls[0][0];
     mutationOptions.onSuccess(
-      { id: "1", stamps: [{ type: "thanks", ipAddress: "127.0.0.1" }] },
+      { id: "1", stamps: [{ type: "thanks", anonymousId: "anonymous-1" }] },
       { postId: "1", type: "thanks" },
     );
 
@@ -630,8 +630,8 @@ describe("PostList", () => {
   });
 
   it("クライアントIPが取得できない場合でも表示される", () => {
-    const mockGetClientIp = api.post.getClientIp.useQuery as jest.Mock;
-    mockGetClientIp.mockReturnValue({
+    const mockGetClientId = api.post.getClientId.useQuery as jest.Mock;
+    mockGetClientId.mockReturnValue({
       data: undefined,
     });
 
@@ -662,7 +662,7 @@ describe("PostList", () => {
                 content: "1つ目の投稿",
                 createdAt: new Date().toISOString(),
                 emotionTag: { id: "clh1234567890", name: "怒り" },
-                ipAddress: "127.0.0.1",
+                anonymousId: "anonymous-1",
                 stamps: [],
               },
             ],
@@ -675,7 +675,7 @@ describe("PostList", () => {
                 content: "2つ目の投稿",
                 createdAt: new Date().toISOString(),
                 emotionTag: { id: "clh1234567891", name: "悲しみ" },
-                ipAddress: "127.0.0.1",
+                anonymousId: "anonymous-2",
                 stamps: [],
               },
             ],
@@ -707,7 +707,7 @@ describe("PostList", () => {
                   id: "clh1234567890",
                   name: "怒り",
                 },
-                ipAddress: "127.0.0.1",
+                anonymousId: "anonymous-1",
                 stamps: [],
               },
             ],
@@ -774,7 +774,7 @@ describe("PostList", () => {
                     {
                       id: `temp-${Date.now()}`,
                       type,
-                      ipAddress: "127.0.0.1",
+                      anonymousId: "anonymous-1",
                       postId,
                       createdAt: new Date(),
                     },

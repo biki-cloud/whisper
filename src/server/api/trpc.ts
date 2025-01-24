@@ -30,12 +30,11 @@ import { db } from "~/server/db";
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const createTRPCContext = async (opts: { headers: any }) => {
-  const forwarded = opts.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "127.0.0.1";
+  const anonymousId = opts.headers.get("x-anonymous-id") ?? "anonymous";
 
   return {
     db,
-    ip,
+    anonymousId,
     ...opts,
   };
 };
