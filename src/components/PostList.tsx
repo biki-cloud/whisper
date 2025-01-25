@@ -6,10 +6,22 @@ import { type GetAllPostsItem } from "~/types/api";
 import { type StampType } from "~/types/stamps";
 import { stampConfig } from "~/utils/stamps";
 import { Card, CardContent } from "~/components/ui/card";
-import { Filter, SortDesc, SortAsc, Loader2, RotateCw } from "lucide-react";
+import {
+  Filter,
+  SortDesc,
+  SortAsc,
+  Loader2,
+  RotateCw,
+  Smile,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { EMOTION_TAGS } from "~/constants/emotions";
 import { Button } from "~/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 
 export function PostList() {
   const utils = api.useContext();
@@ -181,6 +193,7 @@ export function PostList() {
     stamps: GetAllPostsItem["stamps"];
     clientId: string | undefined;
     onStampClick: (postId: string, type: StampType) => void;
+    showCount?: boolean;
   }
 
   function StampButton({
@@ -189,7 +202,8 @@ export function PostList() {
     stamps,
     clientId,
     onStampClick,
-  }: Omit<StampButtonProps, "isPending">) {
+    showCount = true,
+  }: StampButtonProps) {
     const isActive = stamps?.some(
       (stamp) => stamp.type === type && stamp.anonymousId === clientId,
     );
@@ -200,7 +214,6 @@ export function PostList() {
     const handleClick = () => {
       setPendingStamps((prev) => new Set([...prev, stampKey]));
       onStampClick(postId, type);
-      // 300ms後にpendingを解除（最小限のスロットリング）
       setTimeout(() => {
         setPendingStamps((prev) => {
           const next = new Set(prev);
@@ -223,8 +236,48 @@ export function PostList() {
         aria-label={stampConfig[type].label}
       >
         <span className="text-base">{stampConfig[type].icon}</span>
-        <span className="min-w-4 font-medium">{count}</span>
+        {showCount && <span className="min-w-4 font-medium">{count}</span>}
       </motion.button>
+    );
+  }
+
+  function StampSelector({
+    postId,
+    stamps,
+    clientId,
+  }: {
+    postId: string;
+    stamps: GetAllPostsItem["stamps"];
+    clientId: string | undefined;
+  }) {
+    const handleStampClick = (postId: string, type: StampType) => {
+      addStamp.mutate({ postId, type });
+    };
+
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Smile className="h-4 w-4" />
+            スタンプを追加
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-2">
+          <div className="flex flex-wrap gap-1">
+            {Object.keys(stampConfig).map((type) => (
+              <StampButton
+                key={type}
+                type={type as StampType}
+                postId={postId}
+                stamps={stamps}
+                clientId={clientId}
+                onStampClick={handleStampClick}
+                showCount={false}
+              />
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
     );
   }
 
@@ -243,69 +296,46 @@ export function PostList() {
     <div className="space-y-6">
       {filterUI}
       <div className="grid gap-4">
-        {posts.map((post: GetAllPostsItem, _) => (
+        {posts.map((post: GetAllPostsItem) => (
           <motion.div
             key={post.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
           >
-            <Card className="group overflow-hidden border-none bg-gradient-to-br from-card to-muted/50 shadow-md transition-all duration-200 hover:shadow-lg">
-              <CardContent className="p-6">
-                <p className="mb-4 text-lg leading-relaxed">{post.content}</p>
-                <div className="mb-4 flex items-center justify-between">
-                  <button
-                    onClick={() => setEmotionTagId(post.emotionTag.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                      EMOTION_TAGS.find((e) => e.name === post.emotionTag.name)
-                        ?.color ??
-                      "bg-gray-200 text-gray-900 dark:text-gray-200"
-                    }`}
-                  >
-                    <span className="text-base">
-                      {EMOTION_TAGS.find((e) => e.name === post.emotionTag.name)
-                        ?.emoji ?? "😐"}
-                    </span>
-                    {post.emotionTag.name}
-                  </button>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <time dateTime={new Date(post.createdAt).toISOString()}>
-                      {new Date(post.createdAt).toLocaleTimeString("ja-JP", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </time>
-                    {clientId === post.anonymousId && (
-                      <button
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "この投稿を削除してもよろしいですか？ 本日の再投稿はできません。",
-                            )
-                          ) {
-                            deletePost.mutate({ postId: post.id });
-                          }
-                        }}
-                        className="text-destructive/80 hover:text-destructive"
-                      >
-                        削除
-                      </button>
-                    )}
+            <Card>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(post.createdAt).toLocaleString()}
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(stampConfig).map(([type]) => (
-                    <StampButton
-                      key={type}
-                      type={type as StampType}
+                  <div className="whitespace-pre-wrap">{post.content}</div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StampSelector
                       postId={post.id}
                       stamps={post.stamps}
                       clientId={clientId}
-                      onStampClick={(postId, type) =>
-                        addStamp.mutate({ postId, type })
-                      }
                     />
-                  ))}
+                    <div className="flex flex-wrap gap-2">
+                      {Object.keys(stampConfig).map((type) => {
+                        const stampCount = post.stamps.filter(
+                          (stamp) => stamp.type === type,
+                        ).length;
+                        if (stampCount === 0) return null;
+                        return (
+                          <StampButton
+                            key={type}
+                            type={type as StampType}
+                            postId={post.id}
+                            stamps={post.stamps}
+                            clientId={clientId}
+                            onStampClick={(postId, type) =>
+                              addStamp.mutate({ postId, type })
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

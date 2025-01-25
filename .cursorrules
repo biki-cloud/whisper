@@ -61,4 +61,8 @@ Abount nodes command
 
 - if there is a command that you want to execute in package.json, you should use it's command.
 
+About shadcn command
+
+- you can able to use shadcn this command: "pnpm dlx shadcn@latest add [component]"
+
 Follow Next.js docs for Data Fetching, Rendering, and Routing.

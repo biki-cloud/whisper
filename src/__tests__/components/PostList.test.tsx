@@ -108,13 +108,18 @@ describe("PostList", () => {
 
   it("スタンプを追加できる", () => {
     render(<WrappedPostList />);
+
+    // スタンプを追加ボタンをクリック
+    const addStampButton = screen.getByRole("button", {
+      name: /スタンプを追加/i,
+    });
+    fireEvent.click(addStampButton);
+
+    // ポップオーバー内のスタンプボタンをクリック
     const thanksButton = screen.getByRole("button", {
       name: "ありがとうボタン",
     });
     fireEvent.click(thanksButton);
-
-    const loveButton = screen.getByRole("button", { name: "大好きボタン" });
-    fireEvent.click(loveButton);
   });
 
   it("ローディング中にスピナーが表示される", () => {
@@ -192,10 +197,18 @@ describe("PostList", () => {
     });
 
     render(<WrappedPostList />);
+
+    // スタンプカウントの表示を確認
     const thanksCount = screen.getByText("2");
     const loveCount = screen.getByText("1");
     expect(thanksCount).toBeInTheDocument();
     expect(loveCount).toBeInTheDocument();
+
+    // スタンプを追加ボタンが表示されていることを確認
+    const addStampButton = screen.getByRole("button", {
+      name: /スタンプを追加/i,
+    });
+    expect(addStampButton).toBeInTheDocument();
   });
 
   it("削除をキャンセルできる", () => {
@@ -220,6 +233,14 @@ describe("PostList", () => {
     });
 
     render(<WrappedPostList />);
+
+    // スタンプを追加ボタンをクリック
+    const addStampButton = screen.getByRole("button", {
+      name: /スタンプを追加/i,
+    });
+    fireEvent.click(addStampButton);
+
+    // ポップオーバー内のスタンプボタンが無効化されていることを確認
     const thanksButton = screen.getByRole("button", {
       name: "ありがとうボタン",
     });
