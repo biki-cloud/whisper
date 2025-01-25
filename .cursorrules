@@ -53,6 +53,9 @@ About the Test
 - Try to resolve type errors as much as possible.
 - when you test, you should execute "pnpm test:coverage"
 - when you modify source code, you should run test.
+- you do not use vitest. you do not install vitest.
+- As long as the current behavior is not changed, it is possible to change the structure and logic of the source code to make it easier to test.
+- If the unit tests do not pass even after multiple corrections, you can temporarily set it to "ignore."
 
 About environment variable
 
