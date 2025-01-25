@@ -16,6 +16,8 @@ export function PostList() {
   const [emotionTagId, setEmotionTagId] = useState<string | undefined>();
   const [orderBy, setOrderBy] = useState<"desc" | "asc">("desc");
 
+  const { data: emotionTags } = api.emotionTag.getAll.useQuery();
+
   const { data, isLoading } = api.post.getAll.useInfiniteQuery(
     {
       limit: 10,
@@ -123,15 +125,9 @@ export function PostList() {
         >
           <option value="">すべての感情</option>
           {EMOTION_TAGS.map((emotion) => {
-            const tag = posts.find(
-              (post) => post.emotionTag.name === emotion.name,
-            )?.emotionTag;
+            const tag = emotionTags?.find((t) => t.name === emotion.name);
             return (
-              <option
-                key={tag?.id ?? emotion.name}
-                value={tag?.id ?? ""}
-                disabled={!tag}
-              >
+              <option key={tag?.id ?? emotion.name} value={tag?.id ?? ""}>
                 {emotion.emoji} {emotion.name}
               </option>
             );
