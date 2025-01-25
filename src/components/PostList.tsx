@@ -269,9 +269,11 @@ export function PostList() {
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button variant="outline" size="sm" className="relative">
             <Smile className="h-4 w-4" />
-            スタンプを追加
+            <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              +
+            </span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-2">
