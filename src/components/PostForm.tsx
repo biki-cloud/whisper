@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import { getEmotionEmoji } from "~/utils/emotions";
 import { motion } from "framer-motion";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -26,9 +25,11 @@ export function PostForm() {
   const [error, setError] = useState<string | null>(null);
 
   const { data: emotionTags } = api.emotionTag.getAll.useQuery();
+  const utils = api.useContext();
 
   const createPost = api.post.create.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      await utils.post.getAll.invalidate();
       router.push("/posts");
     },
     onError: (error) => {

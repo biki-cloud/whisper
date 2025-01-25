@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { api } from "~/utils/api";
 import { type GetAllPostsItem } from "~/types/api";
-import { getEmotionEmoji } from "~/utils/emotions";
 import { type StampType } from "~/types/stamps";
 import { stampConfig } from "~/utils/stamps";
 import { Card, CardContent } from "~/components/ui/card";
@@ -91,7 +90,7 @@ export function PostList() {
         );
       }
     },
-    onSettled: async (data, error, variables) => {
+    onSettled: async (data, error, _) => {
       if (error) {
         await utils.post.getAll.invalidate();
       }
@@ -244,7 +243,7 @@ export function PostList() {
     <div className="space-y-6">
       {filterUI}
       <div className="grid gap-4">
-        {posts.map((post: GetAllPostsItem, index) => (
+        {posts.map((post: GetAllPostsItem, _) => (
           <motion.div
             key={post.id}
             initial={{ opacity: 0, y: 20 }}
