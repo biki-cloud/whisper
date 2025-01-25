@@ -176,57 +176,71 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // 投稿の存在確認と既存のスタンプを一度に取得
-      const existingStamp = await ctx.db.stamp.findFirst({
-        where: {
-          postId: input.postId,
-          type: input.type,
-          anonymousId: ctx.anonymousId,
-        },
-      });
-
-      if (existingStamp) {
-        // 既存のスタンプを削除
-        await ctx.db.stamp.delete({
+      // スタンプの操作と投稿データの取得を1つのトランザクションで実行
+      return await ctx.db.$transaction(async (tx) => {
+        const existingStamp = await tx.stamp.findFirst({
           where: {
-            id: existingStamp.id,
-          },
-        });
-      } else {
-        // 新規スタンプを作成
-        await ctx.db.stamp.create({
-          data: {
             postId: input.postId,
             type: input.type,
-            native: input.native,
             anonymousId: ctx.anonymousId,
           },
+          select: {
+            id: true,
+          },
         });
-      }
 
-      // 更新された投稿を返す
-      return await ctx.db.post.findUnique({
-        where: { id: input.postId },
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          anonymousId: true,
-          emotionTag: {
-            select: {
-              id: true,
-              name: true,
+        // スタンプの操作（削除または作成）
+        if (existingStamp) {
+          await tx.stamp.delete({
+            where: {
+              id: existingStamp.id,
+            },
+          });
+        } else {
+          await tx.stamp.create({
+            data: {
+              postId: input.postId,
+              type: input.type,
+              native: input.native,
+              anonymousId: ctx.anonymousId,
+            },
+          });
+        }
+
+        // 更新後のスタンプ一覧のみを取得
+        const stamps = await tx.stamp.findMany({
+          where: {
+            postId: input.postId,
+          },
+          select: {
+            id: true,
+            type: true,
+            native: true,
+            anonymousId: true,
+          },
+        });
+
+        // 投稿の基本情報を取得（キャッシュされている可能性が高い）
+        const post = await tx.post.findUniqueOrThrow({
+          where: { id: input.postId },
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            anonymousId: true,
+            emotionTag: {
+              select: {
+                id: true,
+                name: true,
+              },
             },
           },
-          stamps: {
-            select: {
-              id: true,
-              type: true,
-              native: true,
-              anonymousId: true,
-            },
-          },
-        },
+        });
+
+        return {
+          ...post,
+          stamps,
+        };
       });
     }),
 
