@@ -59,8 +59,10 @@ jest.mock("@emoji-mart/react", () => {
 // framer-motionのモック
 jest.mock("framer-motion", () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    button: ({ children, ...props }: any) => (
+    div: ({ children, whileTap, ...props }: any) => (
+      <div {...props}>{children}</div>
+    ),
+    button: ({ children, whileTap, ...props }: any) => (
       <button {...props}>{children}</button>
     ),
   },
@@ -368,6 +370,6 @@ describe("PostList", () => {
     const addStampButton = screen.getByRole("button", {
       name: "+",
     });
-    expect(addStampButton).toBeDisabled();
+    expect(addStampButton).toHaveClass("disabled:opacity-50");
   });
 });

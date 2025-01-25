@@ -55,6 +55,7 @@ const config: Config = {
     customExportConditions: [""],
   },
   extensionsToTreatAsEsm: [".ts", ".tsx"],
+  resolver: undefined,
 };
 
 // createJestConfigを定義することによって、本ファイルで定義された設定がNext.jsの設定に反映される
