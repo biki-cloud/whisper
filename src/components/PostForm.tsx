@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { api } from "~/utils/api";
+import { motion } from "framer-motion";
+import { Loader2, AlertCircle } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import {
@@ -13,61 +12,23 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import { motion } from "framer-motion";
-import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { EMOTION_TAGS } from "~/constants/emotions";
+import { usePostForm } from "~/hooks/post/usePostForm";
 
 export function PostForm() {
-  const router = useRouter();
-  const [content, setContent] = useState("");
-  const [emotionTagId, setEmotionTagId] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [charCount, setCharCount] = useState(0);
-
-  const { data: emotionTags } = api.emotionTag.getAll.useQuery();
-  const utils = api.useContext();
-
-  const createPost = api.post.create.useMutation({
-    onSuccess: async () => {
-      setContent("");
-      setEmotionTagId("");
-      await utils.post.getAll.invalidate();
-      router.push("/");
-    },
-    onError: (error) => {
-      if (error.data?.code === "FORBIDDEN") {
-        setError("1日1回までしか投稿できません。");
-      } else {
-        setError("投稿に失敗しました。もう一度お試しください。");
-      }
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!content.trim() || !emotionTagId) return;
-    try {
-      createPost.mutate({ content: content.trim(), emotionTagId });
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("投稿に失敗しました。もう一度お試しください。");
-      }
-    }
-  };
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    if (newContent.length <= 100) {
-      setContent(newContent);
-      setCharCount(newContent.length);
-    }
-  };
-
-  const isDisabled = !content.trim() || !emotionTagId;
+  const {
+    content,
+    emotionTagId,
+    error,
+    charCount,
+    emotionTags,
+    isDisabled,
+    isPending,
+    handleSubmit,
+    handleContentChange,
+    setEmotionTagId,
+  } = usePostForm();
 
   return (
     <motion.form
@@ -129,7 +90,7 @@ export function PostForm() {
           maxLength={100}
         />
         <div className="text-right text-sm text-muted-foreground">
-          {content.length}/100
+          {charCount}/100
         </div>
       </div>
 
@@ -137,10 +98,10 @@ export function PostForm() {
         <Button
           type="submit"
           size="lg"
-          disabled={isDisabled || createPost.isPending}
+          disabled={isDisabled || isPending}
           className="relative"
         >
-          {createPost.isPending ? (
+          {isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               投稿中...
