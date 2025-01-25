@@ -29,42 +29,33 @@ export function PostList() {
   const addStamp = api.post.addStamp.useMutation({
     onMutate: async ({ postId, type }) => {
       await utils.post.getAll.cancel();
-
-      const prevData = utils.post.getAll.getInfiniteData({
-        limit: 10,
-        emotionTagId,
-        orderBy,
-      });
+      const prevData = utils.post.getAll.getInfiniteData();
 
       utils.post.getAll.setInfiniteData(
-        { limit: 10, emotionTagId, orderBy },
+        { limit: 10, emotionTagId: emotionTagId, orderBy },
         (old) => {
           if (!old) return { pages: [], pageParams: [] };
-
           return {
             ...old,
             pages: old.pages.map((page) => ({
               ...page,
               items: page.items.map((post) => {
                 if (post.id !== postId) return post;
-
-                const existingStamp = post.stamps?.find(
+                const existingStamp = post.stamps.find(
                   (s) => s.type === type && s.anonymousId === clientId,
                 );
-
                 if (existingStamp) {
                   return {
                     ...post,
-                    stamps:
-                      post.stamps?.filter((s) => s.id !== existingStamp.id) ??
-                      [],
+                    stamps: post.stamps.filter(
+                      (s) => s.id !== existingStamp.id,
+                    ),
                   };
                 }
-
                 return {
                   ...post,
                   stamps: [
-                    ...(post.stamps ?? []),
+                    ...post.stamps,
                     {
                       id: `temp-${Date.now()}`,
                       type,
@@ -79,35 +70,36 @@ export function PostList() {
           };
         },
       );
-
       return { prevData };
     },
-    onError: (err, variables, context) => {
+    onError: (_, __, context) => {
       if (context?.prevData) {
         utils.post.getAll.setInfiniteData(
-          { limit: 10, emotionTagId, orderBy },
+          { limit: 10, emotionTagId: emotionTagId, orderBy },
           context.prevData,
         );
       }
     },
-    onSuccess: (data, variables) => {
-      // 成功時に特定の投稿のデータを更新
-      utils.post.getAll.setInfiniteData(
-        { limit: 10, emotionTagId, orderBy },
-        (old) => {
-          if (!old) return { pages: [], pageParams: [] };
-
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map((post) =>
-                post.id === variables.postId ? data : post,
-              ),
-            })),
-          };
-        },
-      );
+    onSettled: async (data, error, variables) => {
+      if (!error && data) {
+        utils.post.getAll.setInfiniteData(
+          { limit: 10, emotionTagId: emotionTagId, orderBy },
+          (old) => {
+            if (!old) return { pages: [], pageParams: [] };
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                items: page.items.map((post) =>
+                  post.id === variables.postId ? data : post,
+                ),
+              })),
+            };
+          },
+        );
+      } else {
+        await utils.post.getAll.invalidate();
+      }
     },
   });
 
@@ -120,6 +112,8 @@ export function PostList() {
   const { data: clientId } = api.post.getClientId.useQuery();
 
   const { data: emotionTags } = api.emotionTag.getAll.useQuery();
+
+  const [pendingStamps, setPendingStamps] = useState<Set<string>>(new Set());
 
   if (isLoading) {
     return (
@@ -182,7 +176,6 @@ export function PostList() {
     stamps: GetAllPostsItem["stamps"];
     clientId: string | undefined;
     onStampClick: (postId: string, type: StampType) => void;
-    isPending: boolean;
   }
 
   function StampButton({
@@ -191,17 +184,31 @@ export function PostList() {
     stamps,
     clientId,
     onStampClick,
-    isPending,
-  }: StampButtonProps) {
+  }: Omit<StampButtonProps, "isPending">) {
     const isActive = stamps?.some(
       (stamp) => stamp.type === type && stamp.anonymousId === clientId,
     );
     const count = stamps?.filter((stamp) => stamp.type === type).length ?? 0;
+    const stampKey = `${postId}-${type}`;
+    const isPending = pendingStamps.has(stampKey);
+
+    const handleClick = () => {
+      setPendingStamps((prev) => new Set([...prev, stampKey]));
+      onStampClick(postId, type);
+      // 300ms後にpendingを解除（最小限のスロットリング）
+      setTimeout(() => {
+        setPendingStamps((prev) => {
+          const next = new Set(prev);
+          next.delete(stampKey);
+          return next;
+        });
+      }, 300);
+    };
 
     return (
       <motion.button
         whileTap={{ scale: 0.95 }}
-        onClick={() => onStampClick(postId, type)}
+        onClick={handleClick}
         className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ${
           isActive
             ? "bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
@@ -236,7 +243,7 @@ export function PostList() {
             key={post.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
+            transition={{ duration: 0.2 }}
           >
             <Card className="group overflow-hidden border-none bg-gradient-to-br from-card to-muted/50 shadow-md transition-all duration-200 hover:shadow-lg">
               <CardContent className="p-6">
@@ -295,7 +302,6 @@ export function PostList() {
                       onStampClick={(postId, type) =>
                         addStamp.mutate({ postId, type })
                       }
-                      isPending={addStamp.isPending}
                     />
                   ))}
                 </div>
