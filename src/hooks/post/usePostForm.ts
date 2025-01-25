@@ -34,7 +34,7 @@ export function usePostForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!content.trim() || !emotionTagId) return;
@@ -51,5 +51,6 @@ export function usePostForm() {
     handleContentChange,
     handleSubmit,
     setEmotionTagId,
+    isPending: createPost.isPending,
   };
 }
