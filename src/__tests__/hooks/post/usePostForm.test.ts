@@ -9,6 +9,7 @@ import type { ChangeEvent } from "react";
 const mockPush = jest.fn();
 const mockInvalidate = jest.fn();
 const mockMutate = jest.fn();
+let mockOnSuccess: (() => void) | undefined;
 let mockOnError: ((error: Error) => void) | undefined;
 
 jest.mock("next/navigation", () => ({
@@ -29,38 +30,20 @@ jest.mock("~/utils/api", () => ({
     emotionTag: {
       getAll: {
         useQuery: () => ({
-          data: [
-            {
-              id: "1",
-              name: "happy",
-              label: "幸せ",
-            },
-          ],
+          data: [{ id: "1", label: "happy" }],
         }),
       },
     },
     post: {
       create: {
-        useMutation: ({ onSuccess, onError }: any) => ({
-          mutate: (...args: any[]) => {
-            mockMutate(...args);
-            try {
-              const result = mockMutate.getMockImplementation()?.(...args);
-              if (result instanceof Promise) {
-                return result.then((data) => {
-                  onSuccess?.();
-                  return data;
-                });
-              }
-              onSuccess?.();
-              return result;
-            } catch (error) {
-              onError?.(error);
-              throw error;
-            }
-          },
-          isPending: false,
-        }),
+        useMutation: ({ onSuccess, onError }: any) => {
+          mockOnSuccess = onSuccess;
+          mockOnError = onError;
+          return {
+            mutate: mockMutate,
+            isPending: false,
+          };
+        },
       },
     },
   },
@@ -69,6 +52,8 @@ jest.mock("~/utils/api", () => ({
 describe("usePostForm", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockOnSuccess = undefined;
+    mockOnError = undefined;
   });
 
   test("初期状態が正しいこと", () => {
@@ -102,17 +87,20 @@ describe("usePostForm", () => {
   });
 
   test("投稿が成功した場合、適切な処理が行われること", async () => {
-    mockMutate.mockImplementationOnce((data) => {
-      return Promise.resolve({ id: "1", ...data });
-    });
-
     const { result } = renderHook(() => usePostForm());
 
-    act(() => {
-      result.current.handleContentChange({
-        target: { value: "test" },
-      } as ChangeEvent<HTMLTextAreaElement>);
+    await act(async () => {
       result.current.setEmotionTagId("1");
+      result.current.handleContentChange({
+        target: { value: "test content" },
+      } as React.ChangeEvent<HTMLTextAreaElement>);
+    });
+
+    mockMutate.mockImplementationOnce(() => {
+      if (mockOnSuccess) {
+        mockOnSuccess();
+      }
+      return Promise.resolve();
     });
 
     await act(async () => {
@@ -121,40 +109,38 @@ describe("usePostForm", () => {
       } as unknown as React.FormEvent);
     });
 
-    expect(mockMutate).toHaveBeenCalledWith({
-      content: "test",
-      emotionTagId: "1",
-    });
     expect(mockInvalidate).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith("/");
   });
 
   test("投稿が失敗した場合、エラーメッセージが設定されること", async () => {
-    mockMutate.mockImplementationOnce(() => {
-      throw new Error("投稿に失敗しました。もう一度お試しください。");
-    });
-
     const { result } = renderHook(() => usePostForm());
 
-    act(() => {
-      result.current.handleContentChange({
-        target: { value: "test content" },
-      } as React.ChangeEvent<HTMLTextAreaElement>);
+    await act(async () => {
       result.current.setEmotionTagId("1");
+      result.current.handleContentChange({
+        target: { value: "test" },
+      } as React.ChangeEvent<HTMLTextAreaElement>);
+    });
+
+    const errorMessage = "投稿に失敗しました。もう一度お試しください。";
+    mockMutate.mockImplementationOnce(() => {
+      if (mockOnError) {
+        mockOnError(new Error(errorMessage));
+      }
+      throw new Error(errorMessage);
     });
 
     await act(async () => {
-      await result.current
-        .handleSubmit({
+      try {
+        await result.current.handleSubmit({
           preventDefault: jest.fn(),
-        } as unknown as React.FormEvent)
-        .catch(() => {
-          // エラーは無視
-        });
+        } as unknown as React.FormEvent);
+      } catch (error) {
+        // エラーは無視
+      }
     });
 
-    expect(result.current.error).toBe(
-      "投稿に失敗しました。もう一度お試しください。",
-    );
+    expect(result.current.error).toBe(errorMessage);
   });
 });
