@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { type StampType } from "@/types/stamps";
 import { Smile } from "lucide-react";
+import React from "react";
 
 interface StampPickerProps {
   onSelect: (stamp: { type: StampType; native: string }) => void;
@@ -27,8 +28,10 @@ interface EmojiMartEmoji {
 }
 
 export function StampPicker({ onSelect, disabled }: StampPickerProps) {
+  const [open, setOpen] = React.useState(false);
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -51,6 +54,7 @@ export function StampPicker({ onSelect, disabled }: StampPickerProps) {
               type: emoji.native,
               native: emoji.native,
             });
+            setOpen(false); // スタンプ選択後にPopoverを閉じる
           }}
           theme="light"
           locale="ja"
