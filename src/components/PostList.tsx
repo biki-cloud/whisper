@@ -383,6 +383,11 @@ export function PostList() {
                   {post.content}
                 </p>
                 <div className="flex flex-wrap gap-2">
+                  <StampSelector
+                    postId={post.id}
+                    stamps={post.stamps}
+                    clientId={clientId}
+                  />
                   {Object.keys(stampConfig).map((type) => {
                     const stampCount = post.stamps.filter(
                       (stamp) => stamp.type === type,
@@ -401,11 +406,6 @@ export function PostList() {
                       />
                     );
                   })}
-                  <StampSelector
-                    postId={post.id}
-                    stamps={post.stamps}
-                    clientId={clientId}
-                  />
                 </div>
               </CardContent>
             </Card>
