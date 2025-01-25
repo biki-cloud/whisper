@@ -2,7 +2,6 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { type Prisma } from "@prisma/client";
-import { STAMP_TYPES } from "~/types/stamps";
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -107,38 +106,49 @@ export const postRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { limit, cursor, emotionTagId, orderBy } = input;
 
-      const where: Prisma.PostWhereInput = {};
-
-      // 感情タグでフィルター
-      if (emotionTagId) {
-        where.emotionTagId = emotionTagId;
-      }
-
-      // 今日の投稿のみを取得（日本時間）
+      // 日本時間の0時0分0秒を取得（UTC基準で計算）
       const now = new Date();
-      const jstOffset = 9 * 60; // UTC+9の分単位のオフセット
-
-      // 日本時間の0時0分0秒を取得
+      const jstOffset = 9 * 60;
       const today = new Date(now.getTime() + jstOffset * 60 * 1000);
       today.setHours(0, 0, 0, 0);
-      today.setTime(today.getTime() - jstOffset * 60 * 1000); // UTCに戻す
+      today.setTime(today.getTime() - jstOffset * 60 * 1000);
 
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      where.createdAt = {
-        gte: today,
-        lt: tomorrow,
+      // クエリを最適化：必要な条件のみを含める
+      const where: Prisma.PostWhereInput = {
+        createdAt: {
+          gte: today,
+          lt: tomorrow,
+        },
+        ...(emotionTagId && { emotionTagId }),
       };
 
-      // カーソルベースのページネーション
+      // 必要なデータのみを取得
       const items = await ctx.db.post.findMany({
         take: limit + 1,
         where,
         cursor: cursor ? { id: cursor } : undefined,
-        include: {
-          emotionTag: true,
-          stamps: true,
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          anonymousId: true,
+          emotionTag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          stamps: {
+            select: {
+              id: true,
+              type: true,
+              native: true,
+              anonymousId: true,
+            },
+          },
         },
         orderBy: {
           createdAt: orderBy,
@@ -161,70 +171,77 @@ export const postRouter = createTRPCRouter({
     .input(
       z.object({
         postId: z.string(),
-        type: z.enum(STAMP_TYPES),
+        type: z.string(),
+        native: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // 投稿の存在確認
-      const post = await ctx.db.post.findUnique({
-        where: { id: input.postId },
-        include: {
-          emotionTag: true,
-          stamps: true,
-        },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "投稿が見つかりません",
-        });
-      }
-
-      // 同じ匿名IDからの同じ投稿への同じタイプのスタンプをチェック
-      const existingStamp = await ctx.db.stamp.findFirst({
-        where: {
-          postId: input.postId,
-          type: input.type,
-          anonymousId: ctx.anonymousId,
-        },
-      });
-
-      if (existingStamp) {
-        // 既存のスタンプが存在する場合は削除
-        await ctx.db.stamp.delete({
+      // スタンプの操作と投稿データの取得を1つのトランザクションで実行
+      return await ctx.db.$transaction(async (tx) => {
+        const existingStamp = await tx.stamp.findFirst({
           where: {
-            id: existingStamp.id,
-          },
-        });
-      } else {
-        // スタンプが存在しない場合は新規作成
-        await ctx.db.stamp.create({
-          data: {
             postId: input.postId,
             type: input.type,
             anonymousId: ctx.anonymousId,
           },
+          select: {
+            id: true,
+          },
         });
-      }
 
-      // 更新された投稿を返す
-      const updatedPost = await ctx.db.post.findUnique({
-        where: { id: input.postId },
-        include: {
-          emotionTag: true,
-          stamps: true,
-        },
+        // スタンプの操作（削除または作成）
+        if (existingStamp) {
+          await tx.stamp.delete({
+            where: {
+              id: existingStamp.id,
+            },
+          });
+        } else {
+          await tx.stamp.create({
+            data: {
+              postId: input.postId,
+              type: input.type,
+              native: input.native,
+              anonymousId: ctx.anonymousId,
+            },
+          });
+        }
+
+        // 更新後のスタンプ一覧のみを取得
+        const stamps = await tx.stamp.findMany({
+          where: {
+            postId: input.postId,
+          },
+          select: {
+            id: true,
+            type: true,
+            native: true,
+            anonymousId: true,
+          },
+        });
+
+        // 投稿の基本情報を取得（キャッシュされている可能性が高い）
+        const post = await tx.post.findUniqueOrThrow({
+          where: { id: input.postId },
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            anonymousId: true,
+            emotionTag: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+
+        return {
+          ...post,
+          stamps,
+        };
       });
-
-      if (!updatedPost) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "投稿が見つかりません",
-        });
-      }
-
-      return updatedPost;
     }),
 
   getClientId: publicProcedure.query(({ ctx }) => {

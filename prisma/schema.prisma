@@ -35,6 +35,7 @@ model EmotionTag {
 model Stamp {
   id          String   @id @default(cuid())
   type        String
+  native      String   @default("")
   postId      String
   createdAt   DateTime @default(now())
   anonymousId String

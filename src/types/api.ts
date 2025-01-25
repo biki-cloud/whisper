@@ -30,6 +30,9 @@ export type GetAllPostsItem = {
     id: string;
     type: string;
     anonymousId: string;
+    postId: string;
+    createdAt: Date;
+    native: string;
   }>;
 };
 
