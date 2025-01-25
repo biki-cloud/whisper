@@ -1074,4 +1074,66 @@ describe("PostList", () => {
     expect(screen.getByText("2")).toBeInTheDocument(); // thanksスタンプの数
     expect(screen.getByText("1")).toBeInTheDocument(); // loveスタンプの数
   });
+
+  it("感情タグでフィルタリングができる", () => {
+    const mockEmotionTags = [
+      { id: "tag-1", name: "怒り" },
+      { id: "tag-2", name: "楽しい" },
+    ];
+
+    (api.emotionTag.getAll.useQuery as jest.Mock).mockReturnValue({
+      data: mockEmotionTags,
+    });
+
+    mockGetAllQuery.mockReturnValueOnce({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "怒りの投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "tag-1",
+                  name: "怒り",
+                },
+                anonymousId: "anonymous-1",
+                stamps: [],
+              },
+              {
+                id: "2",
+                content: "楽しい投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "tag-2",
+                  name: "楽しい",
+                },
+                anonymousId: "anonymous-2",
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+    });
+
+    render(<WrappedPostList />);
+
+    // フィルターのセレクトボックスを選択
+    const filterSelect = screen.getByRole("combobox", {
+      name: /すべての感情/i,
+    });
+    fireEvent.change(filterSelect, { target: { value: "tag-1" } });
+
+    // フィルタリング後のクエリパラメータを確認
+    expect(api.post.getAll.useInfiniteQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        emotionTagId: "tag-1",
+      }),
+      expect.any(Object),
+    );
+  });
 });

@@ -27,7 +27,7 @@
     "db:dev:generate": "prisma migrate dev",
     "db:dev:push": "prisma db push",
     "db:dev:studio": "prisma studio",
-    "db:dev:reset": "prisma migrate reset --force && prisma db seed",
+    "db:dev:reset": "prisma migrate reset --force",
     "db:dev:seed": "prisma db seed",
     "db:prd:generate": "dotenv -e .env.prd -- prisma migrate dev",
     "db:prd:push": "dotenv -e .env.prd -- prisma db push",
