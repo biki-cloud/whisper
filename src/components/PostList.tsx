@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { EMOTION_TAGS } from "~/constants/emotions";
+import { StampButton } from "~/components/StampButton";
 import { Button } from "~/components/ui/button";
 import {
   AlertDialog,
