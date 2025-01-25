@@ -165,67 +165,58 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // 投稿の存在確認
-      const post = await ctx.db.post.findUnique({
-        where: { id: input.postId },
-        include: {
-          emotionTag: true,
-          stamps: true,
-        },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "投稿が見つかりません",
-        });
-      }
-
-      // 同じ匿名IDからの同じ投稿への同じタイプのスタンプをチェック
-      const existingStamp = await ctx.db.stamp.findFirst({
-        where: {
-          postId: input.postId,
-          type: input.type,
-          anonymousId: ctx.anonymousId,
-        },
-      });
-
-      if (existingStamp) {
-        // 既存のスタンプが存在する場合は削除
-        await ctx.db.stamp.delete({
-          where: {
-            id: existingStamp.id,
+      return await ctx.db.$transaction(async (tx) => {
+        // 投稿の存在確認と既存のスタンプを一度に取得
+        const post = await tx.post.findUnique({
+          where: { id: input.postId },
+          include: {
+            emotionTag: true,
+            stamps: {
+              where: {
+                type: input.type,
+                anonymousId: ctx.anonymousId,
+              },
+            },
           },
         });
-      } else {
-        // スタンプが存在しない場合は新規作成
-        await ctx.db.stamp.create({
-          data: {
-            postId: input.postId,
-            type: input.type,
-            native: input.native,
-            anonymousId: ctx.anonymousId,
+
+        if (!post) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "投稿が見つかりません",
+          });
+        }
+
+        const existingStamp = post.stamps[0];
+
+        if (existingStamp) {
+          // 既存のスタンプが存在する場合は削除
+          await tx.stamp.delete({
+            where: {
+              id: existingStamp.id,
+            },
+          });
+        } else {
+          // スタンプが存在しない場合は新規作成
+          await tx.stamp.create({
+            data: {
+              postId: input.postId,
+              type: input.type,
+              native: input.native,
+              anonymousId: ctx.anonymousId,
+            },
+          });
+        }
+
+        // 更新された投稿を返す（トランザクション内で取得）
+        return await tx.post.findUnique({
+          where: { id: input.postId },
+          include: {
+            emotionTag: true,
+            stamps: true,
           },
         });
-      }
-
-      // 更新された投稿を返す
-      const updatedPost = await ctx.db.post.findUnique({
-        where: { id: input.postId },
-        include: {
-          emotionTag: true,
-          stamps: true,
-        },
       });
-
-      if (!updatedPost) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "投稿が見つかりません",
-        });
-      }
-
-      return updatedPost;
     }),
 
   getClientId: publicProcedure.query(({ ctx }) => {
