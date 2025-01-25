@@ -68,7 +68,7 @@ describe("StampPicker", () => {
     fireEvent.click(screen.getByText("Select Emoji"));
 
     expect(onSelect).toHaveBeenCalledWith({
-      type: "smile",
+      type: "😊",
       native: "😊",
     });
   });

@@ -18,13 +18,43 @@ const config: Config = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^~/(.*)$": "<rootDir>/src/$1",
+    "^superjson$": "<rootDir>/node_modules/superjson/dist/index.cjs",
   },
   // セットアップファイルを指定
   setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
   // ESModulesの設定
   transformIgnorePatterns: [
-    "node_modules/(?!(lucide-react|@radix-ui|@babel|@floating-ui|framer-motion)/)",
+    "node_modules/(?!(@trpc|superjson|lucide-react|@radix-ui|@babel|@floating-ui|framer-motion|@emoji-mart)/)",
   ],
+  transform: {
+    "^.+\\.(t|j)sx?$": [
+      "@swc/jest",
+      {
+        jsc: {
+          transform: {
+            react: {
+              runtime: "automatic",
+            },
+          },
+          parser: {
+            syntax: "typescript",
+            tsx: true,
+            decorators: true,
+          },
+          target: "es2020",
+        },
+        module: {
+          type: "commonjs",
+          noInterop: false,
+        },
+      },
+    ],
+  },
+  moduleDirectories: ["node_modules", "<rootDir>/"],
+  testEnvironmentOptions: {
+    customExportConditions: [""],
+  },
+  extensionsToTreatAsEsm: [".ts", ".tsx"],
 };
 
 // createJestConfigを定義することによって、本ファイルで定義された設定がNext.jsの設定に反映される

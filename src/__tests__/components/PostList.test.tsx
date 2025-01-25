@@ -163,6 +163,12 @@ describe("PostList", () => {
   });
 
   it("スタンプを追加できる", () => {
+    const mockMutate = jest.fn();
+    (api.post.addStamp.useMutation as jest.Mock).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    });
+
     render(<WrappedPostList />);
 
     // スタンプを追加ボタンをクリック
@@ -178,15 +184,20 @@ describe("PostList", () => {
     fireEvent.click(screen.getByText("Select Emoji"));
 
     // スタンプが追加されたことを確認
-    expect(api.post.addStamp.useMutation().mutate).toHaveBeenCalledWith({
+    expect(mockMutate).toHaveBeenCalledWith({
       postId: "1",
-      type: "smile",
+      type: "😊",
+      native: "😊",
     });
   });
 
   it("ローディング中にスピナーが表示される", () => {
-    mockGetAllQuery.mockReturnValueOnce({
+    mockGetAllQuery.mockReturnValue({
+      data: undefined,
       isLoading: true,
+      hasNextPage: false,
+      fetchNextPage: jest.fn(),
+      isFetchingNextPage: false,
     });
 
     render(<WrappedPostList />);
@@ -194,7 +205,7 @@ describe("PostList", () => {
   });
 
   it("投稿が0件の場合にメッセージが表示され、フィルターUIも表示される", () => {
-    mockGetAllQuery.mockReturnValueOnce({
+    mockGetAllQuery.mockReturnValue({
       data: {
         pages: [
           {
@@ -204,6 +215,9 @@ describe("PostList", () => {
         ],
       },
       isLoading: false,
+      hasNextPage: false,
+      fetchNextPage: jest.fn(),
+      isFetchingNextPage: false,
     });
 
     render(<WrappedPostList />);
@@ -282,6 +296,34 @@ describe("PostList", () => {
   });
 
   it("削除をキャンセルできる", () => {
+    mockGetAllQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿",
+                createdAt: "2025-01-25T14:18:43.000Z",
+                emotionTagId: "clh1234567890",
+                emotionTag: {
+                  id: "clh1234567890",
+                  name: "怒り",
+                },
+                anonymousId: "anonymous-1",
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+      hasNextPage: false,
+      fetchNextPage: jest.fn(),
+      isFetchingNextPage: false,
+    });
+
     render(<WrappedPostList />);
     const deleteButton = screen.getByText("削除");
     fireEvent.click(deleteButton);
@@ -289,10 +331,37 @@ describe("PostList", () => {
   });
 
   it("スタンプのローディング中はボタンが無効化される", () => {
-    const mockAddStamp = api.post.addStamp.useMutation as jest.Mock;
-    mockAddStamp.mockReturnValueOnce({
+    (api.post.addStamp.useMutation as jest.Mock).mockReturnValue({
       mutate: jest.fn(),
       isPending: true,
+    });
+
+    mockGetAllQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿",
+                createdAt: "2025-01-25T14:18:43.000Z",
+                emotionTagId: "clh1234567890",
+                emotionTag: {
+                  id: "clh1234567890",
+                  name: "怒り",
+                },
+                anonymousId: "anonymous-1",
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+      hasNextPage: false,
+      fetchNextPage: jest.fn(),
+      isFetchingNextPage: false,
     });
 
     render(<WrappedPostList />);
