@@ -81,23 +81,7 @@ export function PostList() {
       }
     },
     onSettled: async (data, error, variables) => {
-      if (!error && data) {
-        utils.post.getAll.setInfiniteData(
-          { limit: 10, emotionTagId: emotionTagId, orderBy },
-          (old) => {
-            if (!old) return { pages: [], pageParams: [] };
-            return {
-              ...old,
-              pages: old.pages.map((page) => ({
-                ...page,
-                items: page.items.map((post) =>
-                  post.id === variables.postId ? data : post,
-                ),
-              })),
-            };
-          },
-        );
-      } else {
+      if (error) {
         await utils.post.getAll.invalidate();
       }
     },
