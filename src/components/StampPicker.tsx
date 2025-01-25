@@ -26,14 +26,6 @@ interface EmojiMartEmoji {
   shortcodes: string;
 }
 
-// スタンプアイコンの型定義
-interface StampIconProps {
-  props: {
-    className: string;
-    children: string;
-  };
-}
-
 export function StampPicker({ onSelect, disabled }: StampPickerProps) {
   return (
     <Popover>

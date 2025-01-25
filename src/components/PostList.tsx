@@ -1,14 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 import { api } from "~/utils/api";
-import { type GetAllPostsItem } from "~/types/api";
-import { type StampType } from "~/types/stamps";
 import { Card, CardContent } from "~/components/ui/card";
 import {
   Filter,
@@ -16,17 +9,10 @@ import {
   SortAsc,
   Loader2,
   RotateCw,
-  Smile,
   Trash2,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { EMOTION_TAGS } from "~/constants/emotions";
 import { Button } from "~/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +25,6 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { StampPicker } from "@/components/StampPicker";
-import { StampButton } from "~/components/StampButton";
 
 export function PostList() {
   const utils = api.useContext();
@@ -134,10 +119,6 @@ export function PostList() {
   });
 
   const { data: clientId } = api.post.getClientId.useQuery();
-
-  const [pendingStamps, setPendingStamps] = useState<Set<string>>(new Set());
-
-  const queryClient = useQueryClient();
 
   const handleStampClick = useCallback(
     (postId: string, type: string, native?: string) => {
@@ -313,7 +294,7 @@ export function PostList() {
             },
             {} as Record<string, number>,
           ),
-        ).map(([type, count]) => (
+        ).map(([type, _]) => (
           <StampButton
             key={type}
             type={type}
