@@ -23,14 +23,17 @@ export function PostForm() {
   const [content, setContent] = useState("");
   const [emotionTagId, setEmotionTagId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [charCount, setCharCount] = useState(0);
 
   const { data: emotionTags } = api.emotionTag.getAll.useQuery();
   const utils = api.useContext();
 
   const createPost = api.post.create.useMutation({
     onSuccess: async () => {
+      setContent("");
+      setEmotionTagId("");
       await utils.post.getAll.invalidate();
-      router.push("/posts");
+      router.push("/");
     },
     onError: (error) => {
       if (error.data?.code === "FORBIDDEN") {
@@ -45,10 +48,26 @@ export function PostForm() {
     e.preventDefault();
     setError(null);
     if (!content.trim() || !emotionTagId) return;
-    createPost.mutate({ content, emotionTagId });
+    try {
+      createPost.mutate({ content: content.trim(), emotionTagId });
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("投稿に失敗しました。もう一度お試しください。");
+      }
+    }
   };
 
-  const isDisabled = createPost.isPending || !content.trim() || !emotionTagId;
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    if (newContent.length <= 100) {
+      setContent(newContent);
+      setCharCount(newContent.length);
+    }
+  };
+
+  const isDisabled = !content.trim() || !emotionTagId;
 
   return (
     <motion.form
@@ -104,19 +123,21 @@ export function PostForm() {
         <Textarea
           id="content"
           value={content}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-            setContent(e.target.value)
-          }
-          placeholder="今の気持ちを自由に書いてみましょう..."
+          onChange={handleContentChange}
+          placeholder="あなたの気持ちや想いを自由に書いてください。誰かがあなたの気持ちに共感するかもしれません..."
           className="min-h-[150px] resize-none border-input/50 bg-background/50 hover:bg-background/80"
+          maxLength={100}
         />
+        <div className="text-right text-sm text-muted-foreground">
+          {content.length}/100
+        </div>
       </div>
 
       <div className="flex justify-end">
         <Button
           type="submit"
           size="lg"
-          disabled={isDisabled}
+          disabled={isDisabled || createPost.isPending}
           className="relative"
         >
           {createPost.isPending ? (

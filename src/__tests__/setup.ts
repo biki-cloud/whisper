@@ -12,5 +12,21 @@ beforeEach(() => {
 
 // グローバルなPrismaモックを設定
 jest.mock("~/server/db", () => ({
-  prisma: prismaMock,
+  db: prismaMock,
 }));
+
+// scrollIntoViewのモック
+Element.prototype.scrollIntoView = jest.fn();
+
+// superjsonのモック
+jest.mock("superjson", () => {
+  const actual = jest.requireActual("identity-obj-proxy");
+  return {
+    ...actual,
+    stringify: jest.fn((obj) => JSON.stringify(obj)),
+    parse: jest.fn((str) => JSON.parse(str)),
+    registerClass: jest.fn(),
+    registerSymbol: jest.fn(),
+    registerCustom: jest.fn(),
+  };
+});

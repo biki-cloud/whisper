@@ -18,7 +18,7 @@ const config: Config = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^~/(.*)$": "<rootDir>/src/$1",
-    "^superjson$": "<rootDir>/node_modules/superjson/dist/index.cjs",
+    "^superjson$": "identity-obj-proxy",
   },
   // セットアップファイルを指定
   setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
@@ -41,6 +41,23 @@ const config: Config = {
             tsx: true,
             decorators: true,
           },
+          target: "es2020",
+        },
+        module: {
+          type: "commonjs",
+          noInterop: false,
+        },
+      },
+    ],
+    "^.+\\.m?js$": [
+      "@swc/jest",
+      {
+        jsc: {
+          parser: {
+            syntax: "ecmascript",
+            jsx: false,
+          },
+          transform: null,
           target: "es2020",
         },
         module: {
