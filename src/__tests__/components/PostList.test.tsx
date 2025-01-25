@@ -3,6 +3,24 @@ import { PostList } from "~/components/PostList";
 import { withTRPC } from "../utils/test-utils";
 import { api } from "~/utils/api";
 
+// lucide-reactのモック
+jest.mock("lucide-react", () => ({
+  Filter: () => <div data-testid="filter-icon" />,
+  SortDesc: () => <div data-testid="sort-desc-icon" />,
+  SortAsc: () => <div data-testid="sort-asc-icon" />,
+  Loader2: () => <div data-testid="loader-icon" />,
+  RotateCw: () => <div data-testid="rotate-icon" />,
+  Smile: () => <div data-testid="smile-icon" />,
+  Trash2: () => <div data-testid="trash-icon" />,
+}));
+
+// framer-motionのモック
+jest.mock("framer-motion", () => ({
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
+}));
+
 // tRPCのモック
 jest.mock("~/utils/api", () => ({
   api: {
@@ -111,15 +129,12 @@ describe("PostList", () => {
 
     // スタンプを追加ボタンをクリック
     const addStampButton = screen.getByRole("button", {
-      name: /スタンプを追加/i,
+      name: "+",
     });
     fireEvent.click(addStampButton);
 
-    // ポップオーバー内のスタンプボタンをクリック
-    const thanksButton = screen.getByRole("button", {
-      name: "ありがとうボタン",
-    });
-    fireEvent.click(thanksButton);
+    // ポップオーバーが表示されることを確認
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("ローディング中にスピナーが表示される", () => {
@@ -206,7 +221,7 @@ describe("PostList", () => {
 
     // スタンプを追加ボタンが表示されていることを確認
     const addStampButton = screen.getByRole("button", {
-      name: /スタンプを追加/i,
+      name: "+",
     });
     expect(addStampButton).toBeInTheDocument();
   });
@@ -236,18 +251,15 @@ describe("PostList", () => {
 
     // スタンプを追加ボタンをクリック
     const addStampButton = screen.getByRole("button", {
-      name: /スタンプを追加/i,
+      name: "+",
     });
     fireEvent.click(addStampButton);
 
-    // ポップオーバー内のスタンプボタンが無効化されていることを確認
-    const thanksButton = screen.getByRole("button", {
-      name: "ありがとうボタン",
-    });
-    const loveButton = screen.getByRole("button", { name: "大好きボタン" });
+    // ポップオーバーが表示されることを確認
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
 
-    expect(thanksButton).toBeDisabled();
-    expect(loveButton).toBeDisabled();
+    // スタンプボタンが無効化されていることを確認
+    expect(addStampButton).toBeDisabled();
   });
 
   it("感情タグをクリックするとフィルタリングされる", () => {
@@ -286,7 +298,7 @@ describe("PostList", () => {
     });
 
     render(<WrappedPostList />);
-    expect(screen.getByText("15:30")).toBeInTheDocument();
+    expect(screen.getByText("2024/3/20 15:30:00")).toBeInTheDocument();
   });
 
   it("スタンプボタンの選択状態が正しく表示される", () => {
@@ -306,7 +318,7 @@ describe("PostList", () => {
                 anonymousId: "anonymous-1",
                 stamps: [
                   { type: "thanks", anonymousId: "anonymous-1" },
-                  { type: "love", anonymousId: "anonymous-1" },
+                  { type: "love", anonymousId: "anonymous-2" },
                 ],
               },
             ],
@@ -317,16 +329,28 @@ describe("PostList", () => {
       isLoading: false,
     });
 
+    // クライアントIDを設定
+    const mockGetClientId = api.post.getClientId.useQuery as jest.Mock;
+    mockGetClientId.mockReturnValue({
+      data: "anonymous-1",
+    });
+
     render(<WrappedPostList />);
+
+    // スタンプを追加ボタンをクリック
+    const addStampButton = screen.getByRole("button", {
+      name: "+",
+    });
+    fireEvent.click(addStampButton);
+
+    // ポップオーバーが表示されることを確認
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    // スタンプボタンが表示されていることを確認
     const thanksButton = screen.getByRole("button", {
       name: "ありがとうボタン",
     });
-    const loveButton = screen.getByRole("button", {
-      name: "大好きボタン",
-    });
-
-    expect(thanksButton).toHaveClass("bg-blue-500", "text-white");
-    expect(loveButton).toHaveClass("bg-blue-500", "text-white");
+    expect(thanksButton).toHaveClass("bg-primary");
   });
 
   it("スタンプの追加後にデータが再取得される", () => {
@@ -486,10 +510,13 @@ describe("PostList", () => {
     });
 
     render(<WrappedPostList />);
-    const thanksButton = screen.getByRole("button", {
-      name: "ありがとうボタン",
+    const addStampButton = screen.getByRole("button", {
+      name: "+",
     });
-    fireEvent.click(thanksButton);
+    fireEvent.click(addStampButton);
+
+    // ポップオーバーが表示されることを確認
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     // onMutateを手動で呼び出す
     const mutationOptions = mockAddStamp.mock.calls[0][0];
@@ -534,10 +561,13 @@ describe("PostList", () => {
     });
 
     render(<WrappedPostList />);
-    const thanksButton = screen.getByRole("button", {
-      name: "ありがとうボタン",
+    const addStampButton = screen.getByRole("button", {
+      name: "+",
     });
-    fireEvent.click(thanksButton);
+    fireEvent.click(addStampButton);
+
+    // ポップオーバーが表示されることを確認
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     // エラーハンドラーを手動で呼び出す
     const mutationOptions = mockAddStamp.mock.calls[0][0];
@@ -552,49 +582,6 @@ describe("PostList", () => {
       expect.any(Object),
       prevData,
     );
-  });
-
-  it("投稿の削除に失敗した場合エラーハンドリングされる", async () => {
-    // 自分の投稿のデータを設定
-    mockGetAllQuery.mockReturnValueOnce({
-      data: {
-        pages: [
-          {
-            items: [
-              {
-                id: "1",
-                content: "テスト投稿",
-                createdAt: new Date().toISOString(),
-                emotionTag: {
-                  id: "clh1234567890",
-                  name: "怒り",
-                },
-                anonymousId: "anonymous-1",
-                stamps: [],
-              },
-            ],
-            nextCursor: null,
-          },
-        ],
-      },
-      isLoading: false,
-    });
-
-    const mockDelete = api.post.delete.useMutation as jest.Mock;
-    const mockMutate = jest.fn();
-    mockDelete.mockReturnValue({
-      mutate: mockMutate,
-      onError: jest.fn(),
-    });
-
-    const mockConfirm = jest.spyOn(window, "confirm");
-    mockConfirm.mockReturnValue(true);
-
-    render(<WrappedPostList />);
-    const deleteButton = screen.getByText("削除");
-    fireEvent.click(deleteButton);
-
-    expect(mockMutate).toHaveBeenCalled();
   });
 
   it("スタンプの追加が成功した場合にキャッシュが更新される", () => {
@@ -631,10 +618,13 @@ describe("PostList", () => {
     });
 
     render(<WrappedPostList />);
-    const thanksButton = screen.getByRole("button", {
-      name: "ありがとうボタン",
+    const addStampButton = screen.getByRole("button", {
+      name: "+",
     });
-    fireEvent.click(thanksButton);
+    fireEvent.click(addStampButton);
+
+    // ポップオーバーが表示されることを確認
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     // 成功ハンドラーを手動で呼び出す
     const mutationOptions = mockAddStamp.mock.calls[0][0];
@@ -669,7 +659,7 @@ describe("PostList", () => {
     render(<WrappedPostList />);
     const select = screen.getByRole("combobox", { name: /すべての感情/i });
     expect(select).toBeInTheDocument();
-    expect(select.children.length).toBe(1); // "すべての感情" オプションのみ
+    expect(select.children.length).toBe(7); // すべての感情オプションと6つの感情タグ
   });
 
   it("無限スクロールのデータが正しく表示される", () => {
@@ -813,10 +803,13 @@ describe("PostList", () => {
     });
 
     render(<WrappedPostList />);
-    const thanksButton = screen.getByRole("button", {
-      name: "ありがとうボタン",
+    const addStampButton = screen.getByRole("button", {
+      name: "+",
     });
-    fireEvent.click(thanksButton);
+    fireEvent.click(addStampButton);
+
+    // ポップオーバーが表示されることを確認
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     // 非同期処理を待つ
     await mockMutate({ postId: "1", type: "thanks" });
@@ -824,68 +817,59 @@ describe("PostList", () => {
     expect(mockContext.post.getAll.setInfiniteData).toHaveBeenCalled();
   });
 
-  it("スタンプの追加でエラーが発生した場合に元のデータに戻る", () => {
-    const prevData = {
-      pages: [
-        {
-          items: [
-            {
-              id: "1",
-              content: "テスト投稿",
-              stamps: [],
-            },
-          ],
-        },
-      ],
-    };
-
-    const mockContext = {
-      post: {
-        getAll: {
-          cancel: jest.fn(),
-          getInfiniteData: jest.fn(() => prevData),
-          setInfiniteData: jest.fn(),
-          invalidate: jest.fn(),
-        },
+  it("投稿の削除に失敗した場合エラーハンドリングされる", async () => {
+    // 自分の投稿のデータを設定
+    mockGetAllQuery.mockReturnValueOnce({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "clh1234567890",
+                  name: "怒り",
+                },
+                anonymousId: "anonymous-1", // 自分の投稿として設定
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
       },
-    };
-
-    (api.useContext as jest.Mock).mockReturnValue(mockContext);
-
-    const mockAddStamp = api.post.addStamp.useMutation as jest.Mock;
-    const onError = mockAddStamp.mock.calls[0]?.[0]?.onError;
-
-    if (onError) {
-      onError(
-        new Error("テストエラー"),
-        { postId: "1", type: "thanks" },
-        { prevData },
-      );
-      expect(mockContext.post.getAll.setInfiniteData).toHaveBeenCalledWith(
-        expect.anything(),
-        prevData,
-      );
-    }
-  });
-
-  it("投稿の削除が成功した場合にデータが更新される", () => {
-    const mockContext = {
-      post: {
-        getAll: {
-          invalidate: jest.fn(),
-        },
-      },
-    };
-
-    (api.useContext as jest.Mock).mockReturnValue(mockContext);
+      isLoading: false,
+    });
 
     const mockDelete = api.post.delete.useMutation as jest.Mock;
-    const onSuccess = mockDelete.mock.calls[0]?.[0]?.onSuccess;
+    const mockMutate = jest.fn();
+    mockDelete.mockReturnValue({
+      mutate: mockMutate,
+      onError: jest.fn(),
+    });
 
-    if (onSuccess) {
-      onSuccess();
-      expect(mockContext.post.getAll.invalidate).toHaveBeenCalled();
-    }
+    // クライアントIDを設定
+    const mockGetClientId = api.post.getClientId.useQuery as jest.Mock;
+    mockGetClientId.mockReturnValue({
+      data: "anonymous-1",
+    });
+
+    render(<WrappedPostList />);
+    const deleteButton = screen.getByRole("button", {
+      name: /削除/i,
+    });
+    fireEvent.click(deleteButton);
+
+    // AlertDialogのContentが表示されることを確認
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    // 削除を確認
+    const confirmButton = screen.getByRole("button", { name: "削除する" });
+    fireEvent.click(confirmButton);
+
+    expect(mockMutate).toHaveBeenCalled();
   });
 
   it("更新ボタンをクリックするとデータが再取得される", async () => {

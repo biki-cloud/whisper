@@ -21,6 +21,10 @@ const config: Config = {
   },
   // セットアップファイルを指定
   setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
+  // ESModulesの設定
+  transformIgnorePatterns: [
+    "node_modules/(?!(lucide-react|@radix-ui|@babel|@floating-ui|framer-motion)/)",
+  ],
 };
 
 // createJestConfigを定義することによって、本ファイルで定義された設定がNext.jsの設定に反映される

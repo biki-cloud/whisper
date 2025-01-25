@@ -51,6 +51,8 @@ About the Test
 - Whenever you modify or add code, be sure to modify the jest test code involved.
 - After modifying the test code, be sure to run/modify it repeatedly until the test is successful.
 - Try to resolve type errors as much as possible.
+- when you test, you should execute "pnpm test:coverage"
+- when you modify source code, you should run test.
 
 About environment variable
 
