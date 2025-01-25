@@ -9,6 +9,7 @@ import { stampConfig } from "~/utils/stamps";
 import { Card, CardContent } from "~/components/ui/card";
 import { Filter, SortDesc, SortAsc, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { EMOTION_TAGS } from "~/constants/emotions";
 
 export function PostList() {
   const utils = api.useContext();
@@ -95,8 +96,6 @@ export function PostList() {
 
   const { data: clientId } = api.post.getClientId.useQuery();
 
-  const { data: emotionTags } = api.emotionTag.getAll.useQuery();
-
   const [pendingStamps, setPendingStamps] = useState<Set<string>>(new Set());
 
   if (isLoading) {
@@ -123,11 +122,17 @@ export function PostList() {
           aria-label="すべての感情"
         >
           <option value="">すべての感情</option>
-          {emotionTags?.map((tag) => {
-            const emotion = getEmotionEmoji(tag.id, tag.name);
+          {EMOTION_TAGS.map((emotion) => {
+            const tag = posts.find(
+              (post) => post.emotionTag.name === emotion.name,
+            )?.emotionTag;
             return (
-              <option key={tag.id} value={tag.id}>
-                {emotion.emoji} {tag.name}
+              <option
+                key={tag?.id ?? emotion.name}
+                value={tag?.id ?? ""}
+                disabled={!tag}
+              >
+                {emotion.emoji} {emotion.name}
               </option>
             );
           })}
@@ -236,17 +241,14 @@ export function PostList() {
                   <button
                     onClick={() => setEmotionTagId(post.emotionTag.id)}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                      getEmotionEmoji(post.emotionTag.id, post.emotionTag.name)
-                        .color
+                      EMOTION_TAGS.find((e) => e.name === post.emotionTag.name)
+                        ?.color ??
+                      "bg-gray-200 text-gray-900 dark:text-gray-200"
                     }`}
                   >
                     <span className="text-base">
-                      {
-                        getEmotionEmoji(
-                          post.emotionTag.id,
-                          post.emotionTag.name,
-                        ).emoji
-                      }
+                      {EMOTION_TAGS.find((e) => e.name === post.emotionTag.name)
+                        ?.emoji ?? "😐"}
                     </span>
                     {post.emotionTag.name}
                   </button>
