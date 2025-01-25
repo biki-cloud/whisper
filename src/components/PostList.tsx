@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { api } from "~/utils/api";
 import { type GetAllPostsItem } from "~/types/api";
 import { type StampType } from "~/types/stamps";
-import { stampConfig } from "~/utils/stamps";
 import { Card, CardContent } from "~/components/ui/card";
 import {
   Filter,
@@ -34,6 +38,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
+import { StampPicker } from "@/components/StampPicker";
+import { StampButton } from "~/components/StampButton";
 
 export function PostList() {
   const utils = api.useContext();
@@ -131,6 +137,81 @@ export function PostList() {
 
   const [pendingStamps, setPendingStamps] = useState<Set<string>>(new Set());
 
+  const queryClient = useQueryClient();
+
+  const handleStampClick = useCallback(
+    (postId: string, type: string, native?: string) => {
+      if (!clientId) return;
+
+      const optimisticStamp = {
+        id: `temp-${Math.random()}`,
+        type,
+        native: native ?? type,
+        anonymousId: clientId,
+        postId,
+        createdAt: new Date(),
+      };
+
+      void addStamp.mutate(
+        { postId, type, native: native ?? type },
+        {
+          onMutate: async () => {
+            await utils.post.getAll.cancel();
+            const prevData = utils.post.getAll.getInfiniteData({
+              limit: 10,
+              emotionTagId,
+              orderBy,
+            });
+
+            utils.post.getAll.setInfiniteData(
+              { limit: 10, emotionTagId, orderBy },
+              (old) => {
+                if (!old) return { pages: [], pageParams: [] };
+                return {
+                  ...old,
+                  pages: old.pages.map((page) => ({
+                    ...page,
+                    items: page.items.map((post) => {
+                      if (post.id !== postId) return post;
+                      const existingStamp = post.stamps.find(
+                        (s) => s.type === type && s.anonymousId === clientId,
+                      );
+                      if (existingStamp) {
+                        return {
+                          ...post,
+                          stamps: post.stamps.filter(
+                            (s) => s.id !== existingStamp.id,
+                          ),
+                        };
+                      }
+                      return {
+                        ...post,
+                        stamps: [...post.stamps, optimisticStamp],
+                      };
+                    }),
+                  })),
+                };
+              },
+            );
+            return { prevData };
+          },
+          onError: (_, __, context) => {
+            if (context?.prevData) {
+              utils.post.getAll.setInfiniteData(
+                { limit: 10, emotionTagId, orderBy },
+                context.prevData,
+              );
+            }
+          },
+          onSettled: () => {
+            void utils.post.getAll.invalidate();
+          },
+        },
+      );
+    },
+    [clientId, addStamp, utils.post.getAll, emotionTagId, orderBy],
+  );
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -199,99 +280,50 @@ export function PostList() {
     </div>
   );
 
-  interface StampButtonProps {
-    type: StampType;
-    postId: string;
-    stamps: GetAllPostsItem["stamps"];
-    clientId: string | undefined;
-    onStampClick: (postId: string, type: StampType) => void;
-    showCount?: boolean;
-  }
-
-  function StampButton({
-    type,
-    postId,
-    stamps,
-    clientId,
-    onStampClick,
-    showCount = true,
-  }: StampButtonProps) {
-    const isActive = stamps?.some(
-      (stamp) => stamp.type === type && stamp.anonymousId === clientId,
-    );
-    const count = stamps?.filter((stamp) => stamp.type === type).length ?? 0;
-    const stampKey = `${postId}-${type}`;
-    const isPending = pendingStamps.has(stampKey);
-
-    const handleClick = () => {
-      setPendingStamps((prev) => new Set([...prev, stampKey]));
-      onStampClick(postId, type);
-      setTimeout(() => {
-        setPendingStamps((prev) => {
-          const next = new Set(prev);
-          next.delete(stampKey);
-          return next;
-        });
-      }, 300);
-    };
-
-    return (
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={handleClick}
-        className={`inline-flex items-center gap-0.5 rounded-full px-1 py-0.5 text-[10px] transition-all duration-200 ${
-          isActive
-            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-        }`}
-        disabled={isPending}
-        aria-label={stampConfig[type].label}
-      >
-        <span className="text-[10px]">{stampConfig[type].icon}</span>
-        {showCount && <span className="min-w-2.5 font-medium">{count}</span>}
-      </motion.button>
-    );
-  }
-
   function StampSelector({
     postId,
     stamps,
     clientId,
   }: {
     postId: string;
-    stamps: GetAllPostsItem["stamps"];
+    stamps: {
+      id: string;
+      type: string;
+      anonymousId: string;
+      postId: string;
+      createdAt: Date;
+      native: string;
+    }[];
     clientId: string | undefined;
   }) {
-    const handleStampClick = (postId: string, type: StampType) => {
-      addStamp.mutate({ postId, type });
-    };
-
     return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="relative">
-            <Smile className="h-4 w-4" />
-            <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-              +
-            </span>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-2">
-          <div className="flex flex-wrap gap-1">
-            {Object.keys(stampConfig).map((type) => (
-              <StampButton
-                key={type}
-                type={type as StampType}
-                postId={postId}
-                stamps={stamps}
-                clientId={clientId}
-                onStampClick={handleStampClick}
-                showCount={false}
-              />
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
+      <div className="flex flex-wrap gap-2">
+        <StampPicker
+          onSelect={({ type, native }) =>
+            handleStampClick(postId, type, native)
+          }
+          disabled={!clientId}
+        />
+        {/* スタンプの集計と表示 */}
+        {Object.entries(
+          stamps.reduce(
+            (acc, stamp) => {
+              acc[stamp.type] = (acc[stamp.type] ?? 0) + 1;
+              return acc;
+            },
+            {} as Record<string, number>,
+          ),
+        ).map(([type, count]) => (
+          <StampButton
+            key={type}
+            type={type}
+            postId={postId}
+            stamps={stamps.filter((s) => s.type === type)}
+            clientId={clientId}
+            onStampClick={handleStampClick}
+          />
+        ))}
+      </div>
     );
   }
 
@@ -388,24 +420,6 @@ export function PostList() {
                     stamps={post.stamps}
                     clientId={clientId}
                   />
-                  {Object.keys(stampConfig).map((type) => {
-                    const stampCount = post.stamps.filter(
-                      (stamp) => stamp.type === type,
-                    ).length;
-                    if (stampCount === 0) return null;
-                    return (
-                      <StampButton
-                        key={type}
-                        type={type as StampType}
-                        postId={post.id}
-                        stamps={post.stamps}
-                        clientId={clientId}
-                        onStampClick={(postId, type) =>
-                          addStamp.mutate({ postId, type })
-                        }
-                      />
-                    );
-                  })}
                 </div>
               </CardContent>
             </Card>

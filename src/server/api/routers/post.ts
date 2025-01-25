@@ -161,7 +161,8 @@ export const postRouter = createTRPCRouter({
     .input(
       z.object({
         postId: z.string(),
-        type: z.enum(STAMP_TYPES),
+        type: z.string(),
+        native: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -203,6 +204,7 @@ export const postRouter = createTRPCRouter({
           data: {
             postId: input.postId,
             type: input.type,
+            native: input.native,
             anonymousId: ctx.anonymousId,
           },
         });
