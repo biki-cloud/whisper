@@ -1,16 +1,9 @@
-import type { PostWithRelations } from "~/hooks/post/usePostList";
-
-type Stamp = PostWithRelations["stamps"][number];
-
-interface AggregatedStamp {
-  type: string;
-  count: number;
-  stamps: Stamp[];
-}
+import { useMemo } from "react";
+import type { Stamp, AggregatedStamp } from "~/types/post";
 
 export function useStampAggregation(stamps: Stamp[]) {
-  const aggregateStamps = (): AggregatedStamp[] => {
-    const stampMap = stamps.reduce(
+  const aggregatedStamps = useMemo(() => {
+    const stampMap = stamps.reduce<Record<string, AggregatedStamp>>(
       (acc, stamp) => {
         const type = stamp.type;
         if (!acc[type]) {
@@ -20,20 +13,17 @@ export function useStampAggregation(stamps: Stamp[]) {
             stamps: [],
           };
         }
-        const aggregated = acc[type];
-        if (aggregated) {
-          aggregated.count += 1;
-          aggregated.stamps.push(stamp);
-        }
+        acc[type].count += 1;
+        acc[type].stamps.push(stamp);
         return acc;
       },
-      {} as Record<string, AggregatedStamp>,
+      {},
     );
 
     return Object.values(stampMap);
-  };
+  }, [stamps]);
 
   return {
-    aggregatedStamps: aggregateStamps(),
+    aggregatedStamps,
   };
 }
