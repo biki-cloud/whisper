@@ -57,30 +57,36 @@ const mockUsePostForm = jest.fn();
 
 // モックの設定
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
+  useRouter: jest.fn(),
 }));
 
 jest.mock("~/utils/api", () => ({
   api: {
+    useContext: jest.fn(() => ({
+      post: {
+        getAll: {
+          invalidate: jest.fn(),
+        },
+      },
+    })),
     emotionTag: {
       getAll: {
-        useQuery: mockUseQuery,
+        useQuery: jest.fn(() => ({
+          data: [
+            { id: "1", name: "happy" },
+            { id: "2", name: "sad" },
+          ],
+        })),
       },
     },
     post: {
       create: {
-        useMutation: mockUseMutation,
+        useMutation: jest.fn(() => ({
+          mutateAsync: jest.fn(),
+          isPending: false,
+        })),
       },
     },
-    useContext: () => ({
-      post: {
-        getAll: {
-          invalidate: mockInvalidate,
-        },
-      },
-    }),
   },
 }));
 
@@ -89,8 +95,13 @@ jest.mock("~/hooks/post/usePostForm", () => ({
 }));
 
 describe("PostForm", () => {
+  const mockRouter = {
+    push: jest.fn(),
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
+    (useRouter as jest.Mock).mockReturnValue(mockRouter);
     mockUsePostForm.mockReturnValue({
       content: "",
       emotionTagId: "",
@@ -102,7 +113,83 @@ describe("PostForm", () => {
       handleSubmit: jest.fn(),
       handleContentChange: jest.fn(),
       setEmotionTagId: jest.fn(),
+      loadEmotionTags: jest.fn(),
     });
+  });
+
+  test("フォームが正しくレンダリングされること", () => {
+    render(<PostForm />);
+
+    expect(screen.getByLabelText("今の気持ち")).toBeInTheDocument();
+    expect(screen.getByLabelText("メッセージ")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "投稿する" }),
+    ).toBeInTheDocument();
+  });
+
+  test("メッセージを入力できること", async () => {
+    const mockHandleContentChange = jest.fn();
+    mockUsePostForm.mockReturnValue({
+      content: "",
+      emotionTagId: "",
+      error: null,
+      charCount: 0,
+      emotionTags: mockEmotionTags,
+      isDisabled: true,
+      isPending: false,
+      handleSubmit: jest.fn(),
+      handleContentChange: mockHandleContentChange,
+      setEmotionTagId: jest.fn(),
+      loadEmotionTags: jest.fn(),
+    });
+
+    render(<PostForm />);
+    const textarea = screen.getByLabelText("メッセージ");
+    await userEvent.type(textarea, "テストメッセージ");
+    expect(mockHandleContentChange).toHaveBeenCalled();
+  });
+
+  test("感情を選択できること", async () => {
+    mockUsePostForm.mockReturnValue({
+      content: "",
+      emotionTagId: "",
+      error: null,
+      charCount: 0,
+      emotionTags: mockEmotionTags,
+      isDisabled: true,
+      isPending: false,
+      handleSubmit: jest.fn(),
+      handleContentChange: jest.fn(),
+      setEmotionTagId: jest.fn(),
+      loadEmotionTags: jest.fn(),
+    });
+
+    render(<PostForm />);
+    const select = screen.getByLabelText("今の気持ち");
+    fireEvent.click(select);
+    expect(screen.getByText("😠怒り")).toBeInTheDocument();
+  });
+
+  test("エラー時にエラーメッセージが表示されること", () => {
+    mockUsePostForm.mockReturnValue({
+      content: "",
+      emotionTagId: "",
+      error: "感情を選択してください",
+      charCount: 0,
+      emotionTags: mockEmotionTags,
+      isDisabled: true,
+      isPending: false,
+      handleSubmit: jest.fn(),
+      handleContentChange: jest.fn(),
+      setEmotionTagId: jest.fn(),
+      loadEmotionTags: jest.fn(),
+    });
+
+    render(<PostForm />);
+    const submitButton = screen.getByRole("button", { name: "投稿する" });
+    fireEvent.click(submitButton);
+    const errorMessages = screen.getAllByText("感情を選択してください");
+    expect(errorMessages[0]).toBeInTheDocument();
   });
 
   it("フォームが正しくレンダリングされること", () => {
@@ -125,6 +212,7 @@ describe("PostForm", () => {
       handleSubmit: jest.fn(),
       emotionTags: mockEmotionTags,
       isLoading: false,
+      loadEmotionTags: jest.fn(),
     });
 
     renderWithProviders(<PostForm />);
@@ -145,6 +233,7 @@ describe("PostForm", () => {
       handleSubmit: jest.fn(),
       emotionTags: mockEmotionTags,
       isLoading: false,
+      loadEmotionTags: jest.fn(),
     });
 
     renderWithProviders(<PostForm />);
@@ -164,6 +253,7 @@ describe("PostForm", () => {
       handleSubmit: mockHandleSubmit,
       emotionTags: mockEmotionTags,
       isLoading: false,
+      loadEmotionTags: jest.fn(),
     });
 
     renderWithProviders(<PostForm />);
@@ -185,6 +275,7 @@ describe("PostForm", () => {
       handleSubmit: jest.fn(),
       emotionTags: mockEmotionTags,
       isLoading: false,
+      loadEmotionTags: jest.fn(),
     });
 
     renderWithProviders(<PostForm />);
@@ -206,6 +297,7 @@ describe("PostForm", () => {
       handleSubmit: jest.fn(),
       handleContentChange: jest.fn(),
       setEmotionTagId: jest.fn(),
+      loadEmotionTags: jest.fn(),
     });
 
     renderWithProviders(<PostForm />);
@@ -224,6 +316,7 @@ describe("PostForm", () => {
       handleSubmit: jest.fn(),
       handleContentChange: jest.fn(),
       setEmotionTagId: jest.fn(),
+      loadEmotionTags: jest.fn(),
     });
 
     renderWithProviders(<PostForm />);
@@ -242,6 +335,7 @@ describe("PostForm", () => {
       handleSubmit: jest.fn(),
       handleContentChange: jest.fn(),
       setEmotionTagId: jest.fn(),
+      loadEmotionTags: jest.fn(),
     });
 
     renderWithProviders(<PostForm />);

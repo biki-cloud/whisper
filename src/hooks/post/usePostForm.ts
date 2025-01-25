@@ -1,56 +1,125 @@
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { api } from "~/utils/api";
+import type { EmotionTag } from "@prisma/client";
 
-export function usePostForm() {
-  const router = useRouter();
-  const [content, setContent] = useState("");
-  const [emotionTagId, setEmotionTagId] = useState("");
-  const [error, setError] = useState<string | null>(null);
+export interface PostFormDeps {
+  router: {
+    push: (path: string) => void;
+  };
+  postApi: {
+    create: (data: { content: string; emotionTagId: string }) => Promise<void>;
+    invalidateQueries: () => Promise<void>;
+  };
+  emotionTagApi: {
+    getAll: () => Promise<EmotionTag[]>;
+  };
+}
 
-  const { data: emotionTags } = api.emotionTag.getAll.useQuery();
-  const apiContext = api.useContext();
+interface PostFormState {
+  content: string;
+  emotionTagId: string;
+  error: string | null;
+}
 
-  const createPost = api.post.create.useMutation({
-    onSuccess: () => {
-      void apiContext.post.getAll.invalidate();
-      router.push("/");
-    },
-    onError: (error) => {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "投稿に失敗しました。もう一度お試しください。";
-      setError(errorMessage);
-    },
+interface ValidationResult {
+  isValid: boolean;
+  error: string | null;
+}
+
+function validateForm(content: string, emotionTagId: string): ValidationResult {
+  if (content.length > 100) {
+    return { isValid: false, error: "内容は100文字以内で入力してください" };
+  }
+  if (!content.trim()) {
+    return { isValid: false, error: "内容を入力してください" };
+  }
+  if (!emotionTagId) {
+    return { isValid: false, error: "感情を選択してください" };
+  }
+  return { isValid: true, error: null };
+}
+
+export function usePostForm(deps: PostFormDeps) {
+  const [state, setState] = useState<PostFormState>({
+    content: "",
+    emotionTagId: "",
+    error: null,
   });
+  const [isPending, setIsPending] = useState(false);
+  const [emotionTags, setEmotionTags] = useState<EmotionTag[]>([]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     if (newContent.length > 100) {
-      setContent(newContent.slice(0, 100));
+      setState((prev) => ({
+        ...prev,
+        content: newContent.slice(0, 100),
+        error: "内容は100文字以内で入力してください",
+      }));
     } else {
-      setContent(newContent);
+      setState((prev) => ({
+        ...prev,
+        content: newContent,
+        error: null,
+      }));
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    if (!content.trim() || !emotionTagId) return;
-    createPost.mutate({ content: content.trim(), emotionTagId });
+    const validation = validateForm(state.content, state.emotionTagId);
+
+    if (!validation.isValid) {
+      setState((prev) => ({ ...prev, error: validation.error }));
+      return;
+    }
+
+    setIsPending(true);
+    setState((prev) => ({ ...prev, error: null }));
+
+    try {
+      await deps.postApi.create({
+        content: state.content.trim(),
+        emotionTagId: state.emotionTagId,
+      });
+      await deps.postApi.invalidateQueries();
+      deps.router.push("/");
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        error: error instanceof Error ? error.message : "投稿に失敗しました",
+      }));
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const setEmotionTagId = (id: string) => {
+    setState((prev) => ({ ...prev, emotionTagId: id }));
+  };
+
+  const loadEmotionTags = async () => {
+    try {
+      const tags = await deps.emotionTagApi.getAll();
+      setEmotionTags(tags);
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        error: "感情タグの読み込みに失敗しました",
+      }));
+    }
   };
 
   return {
-    content,
-    emotionTagId,
-    error,
+    content: state.content,
+    emotionTagId: state.emotionTagId,
+    error: state.error,
     emotionTags,
-    isDisabled: !content.trim() || !emotionTagId || createPost.isPending,
-    charCount: content.length,
+    isDisabled: !state.content.trim() || !state.emotionTagId || isPending,
+    charCount: state.content.length,
     handleContentChange,
     handleSubmit,
     setEmotionTagId,
-    isPending: createPost.isPending,
+    isPending,
+    loadEmotionTags,
   };
 }

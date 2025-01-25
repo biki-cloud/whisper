@@ -15,43 +15,55 @@ import { Label } from "~/components/ui/label";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { EMOTION_TAGS } from "~/constants/emotions";
 import { usePostForm } from "~/hooks/post/usePostForm";
+import { useRouter } from "next/navigation";
+import { api } from "~/utils/api";
+import { useEffect } from "react";
 
 export function PostForm() {
-  const {
-    content,
-    emotionTagId,
-    error,
-    charCount,
-    emotionTags,
-    isDisabled,
-    isPending,
-    handleSubmit,
-    handleContentChange,
-    setEmotionTagId,
-  } = usePostForm();
+  const router = useRouter();
+  const apiContext = api.useContext();
+  const createPost = api.post.create.useMutation();
+  const { data: emotionTagsData } = api.emotionTag.getAll.useQuery();
+
+  const form = usePostForm({
+    router,
+    postApi: {
+      create: async (data) => {
+        await createPost.mutateAsync(data);
+      },
+      invalidateQueries: () => apiContext.post.getAll.invalidate(),
+    },
+    emotionTagApi: {
+      getAll: async () => emotionTagsData ?? [],
+    },
+  });
+
+  useEffect(() => {
+    void form.loadEmotionTags();
+  }, [emotionTagsData]);
 
   return (
     <motion.form
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      onSubmit={(e: React.FormEvent) => void handleSubmit(e)}
+      onSubmit={(e: React.FormEvent) => void form.handleSubmit(e)}
       className="space-y-6"
       data-testid="post-form"
     >
-      {error && (
+      {form.error && (
         <Alert
           variant="destructive"
           className="bg-destructive/5 text-destructive"
         >
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{form.error}</AlertDescription>
         </Alert>
       )}
 
       <div className="space-y-2">
         <Label htmlFor="emotion">今の気持ち</Label>
-        <Select value={emotionTagId} onValueChange={setEmotionTagId}>
+        <Select value={form.emotionTagId} onValueChange={form.setEmotionTagId}>
           <SelectTrigger
             id="emotion"
             className="border-input/50 bg-background/50 hover:bg-background/80"
@@ -60,7 +72,9 @@ export function PostForm() {
           </SelectTrigger>
           <SelectContent>
             {EMOTION_TAGS.map((emotion) => {
-              const tag = emotionTags?.find((t) => t.name === emotion.name);
+              const tag = form.emotionTags?.find(
+                (t) => t.name === emotion.name,
+              );
               if (!tag) return null;
               return (
                 <SelectItem
@@ -83,14 +97,14 @@ export function PostForm() {
         <Label htmlFor="content">メッセージ</Label>
         <Textarea
           id="content"
-          value={content}
-          onChange={handleContentChange}
+          value={form.content}
+          onChange={form.handleContentChange}
           placeholder="あなたの気持ちや想いを自由に書いてください。誰かがあなたの気持ちに共感するかもしれません..."
           className="min-h-[150px] resize-none border-input/50 bg-background/50 hover:bg-background/80"
           maxLength={100}
         />
         <div className="text-right text-sm text-muted-foreground">
-          {charCount}/100
+          {form.charCount}/100
         </div>
       </div>
 
@@ -98,10 +112,10 @@ export function PostForm() {
         <Button
           type="submit"
           size="lg"
-          disabled={isDisabled || isPending}
-          className="relative"
+          disabled={form.isDisabled}
+          className="min-w-32"
         >
-          {isPending ? (
+          {form.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               投稿中...
