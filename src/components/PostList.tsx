@@ -13,6 +13,7 @@ import {
   Loader2,
   RotateCw,
   Smile,
+  Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { EMOTION_TAGS } from "~/constants/emotions";
@@ -22,6 +23,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 
 export function PostList() {
   const utils = api.useContext();
@@ -305,8 +317,45 @@ export function PostList() {
             <Card>
               <CardContent className="p-4">
                 <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(post.createdAt).toLocaleString()}
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(post.createdAt).toLocaleString()}
+                    </div>
+                    {clientId === post.anonymousId && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive/90"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            削除
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              投稿を削除しますか？
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              この操作は取り消せません。また、本日中の再投稿はできません。
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() =>
+                                deletePost.mutate({ postId: post.id })
+                              }
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              削除する
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
                   <div className="whitespace-pre-wrap">{post.content}</div>
                   <div className="flex flex-wrap items-center gap-2">
