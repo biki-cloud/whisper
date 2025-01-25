@@ -106,11 +106,6 @@ export function PostList() {
         );
       }
     },
-    onSettled: async (data, error, _) => {
-      if (error) {
-        await utils.post.getAll.invalidate();
-      }
-    },
   });
 
   const deletePost = api.post.delete.useMutation({
@@ -124,15 +119,6 @@ export function PostList() {
   const handleStampClick = useCallback(
     (postId: string, type: string, native?: string) => {
       if (!clientId) return;
-
-      const optimisticStamp = {
-        id: `temp-${Math.random()}`,
-        type,
-        native: native ?? type,
-        anonymousId: clientId,
-        postId,
-        createdAt: new Date(),
-      };
 
       void addStamp.mutate(
         { postId, type, native: native ?? type },
@@ -168,7 +154,17 @@ export function PostList() {
                       }
                       return {
                         ...post,
-                        stamps: [...post.stamps, optimisticStamp],
+                        stamps: [
+                          ...post.stamps,
+                          {
+                            id: `temp-${Date.now()}`,
+                            type,
+                            native: native ?? type,
+                            anonymousId: clientId,
+                            postId,
+                            createdAt: new Date(),
+                          },
+                        ],
                       };
                     }),
                   })),
@@ -184,9 +180,6 @@ export function PostList() {
                 context.prevData,
               );
             }
-          },
-          onSettled: () => {
-            void utils.post.getAll.invalidate();
           },
         },
       );
