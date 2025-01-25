@@ -1,8 +1,5 @@
 import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { api } from "~/utils/api";
-import { type PropsWithChildren } from "react";
-import { EMOTION_TAGS } from "~/constants/emotions";
 
 jest.mock("~/utils/api", () => ({
   api: {
@@ -33,12 +30,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-const mockEmotionTags = EMOTION_TAGS.map((tag, index) => ({
-  id: String(index + 1),
-  name: tag.name,
-  emoji: tag.emoji,
-}));
 
 export function renderWithProviders(ui: React.ReactElement) {
   return render(
