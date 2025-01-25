@@ -334,7 +334,12 @@ export function PostList() {
                       variant="secondary"
                       size="sm"
                       className="text-sm"
-                      onClick={() => setEmotionTagId(post.emotionTag.id)}
+                      onClick={() => {
+                        const tag = emotionTags?.find(
+                          (t) => t.name === post.emotionTag.name,
+                        );
+                        setEmotionTagId(tag?.id);
+                      }}
                     >
                       {
                         EMOTION_TAGS.find(
@@ -378,6 +383,24 @@ export function PostList() {
                   {post.content}
                 </p>
                 <div className="flex flex-wrap gap-2">
+                  {Object.keys(stampConfig).map((type) => {
+                    const stampCount = post.stamps.filter(
+                      (stamp) => stamp.type === type,
+                    ).length;
+                    if (stampCount === 0) return null;
+                    return (
+                      <StampButton
+                        key={type}
+                        type={type as StampType}
+                        postId={post.id}
+                        stamps={post.stamps}
+                        clientId={clientId}
+                        onStampClick={(postId, type) =>
+                          addStamp.mutate({ postId, type })
+                        }
+                      />
+                    );
+                  })}
                   <StampSelector
                     postId={post.id}
                     stamps={post.stamps}

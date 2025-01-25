@@ -973,4 +973,105 @@ describe("PostList", () => {
     render(<WrappedPostList />);
     expect(screen.getByText("😠 怒り")).toBeInTheDocument();
   });
+
+  it("投稿の感情タグをクリックするとフィルターのセレクトボックスも同期して変更される", () => {
+    const mockEmotionTags = [
+      { id: "clh1234567890", name: "怒り" },
+      { id: "clh1234567891", name: "楽しい" },
+    ];
+
+    (api.emotionTag.getAll.useQuery as jest.Mock).mockReturnValue({
+      data: mockEmotionTags,
+    });
+
+    mockGetAllQuery.mockReturnValueOnce({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "tag-1",
+                  name: "楽しい",
+                },
+                anonymousId: "anonymous-1",
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+    });
+
+    render(<WrappedPostList />);
+
+    // 感情タグボタンをクリック
+    const emotionTagButton = screen.getByRole("button", { name: "🎵 楽しい" });
+    fireEvent.click(emotionTagButton);
+
+    // フィルターのセレクトボックスが同期して変更されていることを確認
+    const filterSelect = screen.getByRole("combobox", {
+      name: /すべての感情/i,
+    });
+    expect(filterSelect).toHaveValue("clh1234567891");
+  });
+
+  it("押されているスタンプが正しく表示される", () => {
+    mockGetAllQuery.mockReturnValueOnce({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "clh1234567890",
+                  name: "怒り",
+                },
+                anonymousId: "anonymous-1",
+                stamps: [
+                  {
+                    id: "stamp1",
+                    type: "thanks",
+                    anonymousId: "anonymous-1",
+                    postId: "1",
+                    createdAt: new Date(),
+                  },
+                  {
+                    id: "stamp2",
+                    type: "thanks",
+                    anonymousId: "anonymous-2",
+                    postId: "1",
+                    createdAt: new Date(),
+                  },
+                  {
+                    id: "stamp3",
+                    type: "love",
+                    anonymousId: "anonymous-1",
+                    postId: "1",
+                    createdAt: new Date(),
+                  },
+                ],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+    });
+
+    render(<WrappedPostList />);
+
+    // スタンプの数が正しく表示されていることを確認
+    expect(screen.getByText("2")).toBeInTheDocument(); // thanksスタンプの数
+    expect(screen.getByText("1")).toBeInTheDocument(); // loveスタンプの数
+  });
 });
