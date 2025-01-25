@@ -1,6 +1,9 @@
+"use client";
+
 import { StampPicker } from "~/components/StampPicker";
 import { StampButton } from "~/components/StampButton";
 import { usePostStamps } from "~/hooks/post/usePostStamps";
+import { useStampAggregation } from "~/hooks/post/useStampAggregation";
 import type { PostWithRelations } from "~/hooks/post/usePostList";
 
 type Stamp = PostWithRelations["stamps"][number];
@@ -12,34 +15,24 @@ interface StampSelectorProps {
 
 export function StampSelector({ postId, stamps }: StampSelectorProps) {
   const { clientId, handleStampClick } = usePostStamps();
+  const { aggregatedStamps } = useStampAggregation(stamps);
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" data-testid="stamp-selector">
       <StampPicker
         onSelect={({ type, native }) => handleStampClick(postId, type, native)}
         disabled={!clientId}
       />
-      {/* スタンプの集計と表示 */}
-      {Object.entries(
-        stamps.reduce(
-          (acc, stamp) => {
-            acc[stamp.type] = (acc[stamp.type] ?? 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>,
-        ),
-      ).map(([type, _]) => (
+      {aggregatedStamps.map(({ type, stamps: stampsByType }) => (
         <StampButton
           key={type}
           type={type}
           postId={postId}
-          stamps={stamps
-            .filter((s) => s.type === type)
-            .map((s) => ({
-              ...s,
-              postId,
-              createdAt: new Date(),
-            }))}
+          stamps={stampsByType.map((s) => ({
+            ...s,
+            postId,
+            createdAt: new Date(),
+          }))}
           clientId={clientId}
           onStampClick={handleStampClick}
         />
