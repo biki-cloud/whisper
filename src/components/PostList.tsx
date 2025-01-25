@@ -239,16 +239,16 @@ export function PostList() {
       <motion.button
         whileTap={{ scale: 0.95 }}
         onClick={handleClick}
-        className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ${
+        className={`inline-flex items-center gap-0.5 rounded-full px-1 py-0.5 text-[10px] transition-all duration-200 ${
           isActive
-            ? "bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
-            : "bg-muted hover:bg-muted/80"
+            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
         }`}
         disabled={isPending}
         aria-label={stampConfig[type].label}
       >
-        <span className="text-base">{stampConfig[type].icon}</span>
-        {showCount && <span className="min-w-4 font-medium">{count}</span>}
+        <span className="text-[10px]">{stampConfig[type].icon}</span>
+        {showCount && <span className="min-w-2.5 font-medium">{count}</span>}
       </motion.button>
     );
   }
