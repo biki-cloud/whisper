@@ -1,85 +1,116 @@
+"use client";
+
 import { useCallback } from "react";
 import { api } from "~/utils/api";
+import { useClientId } from "~/hooks/useClientId";
+import type { RouterInputs, RouterOutputs } from "~/utils/api";
+
+type Post = RouterOutputs["post"]["getAll"]["items"][number];
+type PostResponse = RouterOutputs["post"]["getAll"];
+type Stamp = Post["stamps"][number];
+
+interface StampInput {
+  postId: string;
+  type: string;
+  native: string;
+  anonymousId: string;
+}
+
+interface StampMutationContext {
+  previousPosts: PostResponse | undefined;
+}
+
+interface StampMutationError {
+  message: string;
+}
+
+interface StampMutationOptions {
+  onMutate?: (variables: StampInput) => Promise<StampMutationContext>;
+  onError?: (
+    error: StampMutationError,
+    variables: StampInput,
+    context: StampMutationContext,
+  ) => void;
+  onSettled?: () => void;
+}
 
 export function usePostStamps(
   emotionTagId?: string,
-  orderBy: "desc" | "asc" = "desc",
+  orderBy: "asc" | "desc" = "desc",
+  options: StampMutationOptions = {},
 ) {
+  const { clientId } = useClientId();
   const utils = api.useContext();
-  const { data: clientId } = api.post.getClientId.useQuery();
 
-  const addStamp = api.post.addStamp.useMutation({
-    onMutate: async ({ postId, type }) => {
+  const { mutate: addStamp } = api.post.addStamp.useMutation({
+    async onMutate(variables) {
       await utils.post.getAll.cancel();
-      const prevData = utils.post.getAll.getInfiniteData({
-        limit: 10,
+      const previousPosts = utils.post.getAll.getData({
         emotionTagId,
         orderBy,
       });
 
-      utils.post.getAll.setInfiniteData(
-        { limit: 10, emotionTagId, orderBy },
-        (old) => {
-          if (!old) return { pages: [], pageParams: [] };
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map((post) => {
-                if (post.id !== postId) return post;
-                const existingStamp = post.stamps.find(
-                  (s) => s.type === type && s.anonymousId === clientId,
-                );
-                if (existingStamp) {
-                  return {
-                    ...post,
-                    stamps: post.stamps.filter(
-                      (s) => s.id !== existingStamp.id,
-                    ),
-                  };
-                }
+      if (previousPosts) {
+        utils.post.getAll.setData(
+          { emotionTagId, orderBy },
+          {
+            ...previousPosts,
+            items: previousPosts.items.map((post) => {
+              if (post.id === variables.postId) {
                 return {
                   ...post,
                   stamps: [
                     ...post.stamps,
                     {
-                      id: `temp-${Date.now()}`,
-                      type,
+                      id: "temp",
+                      type: variables.type,
                       anonymousId: clientId ?? "",
-                      postId,
+                      postId: variables.postId,
                       createdAt: new Date(),
-                      native: type,
-                    },
+                      native: variables.native,
+                    } as Stamp,
                   ],
                 };
-              }),
-            })),
-          };
-        },
-      );
-      return { prevData };
-    },
-    onError: (_, __, context) => {
-      if (context?.prevData) {
-        utils.post.getAll.setInfiniteData(
-          { limit: 10, emotionTagId, orderBy },
-          context.prevData,
+              }
+              return post;
+            }),
+          },
         );
       }
+
+      return { previousPosts };
+    },
+
+    onError(error, variables, context) {
+      if (context?.previousPosts) {
+        utils.post.getAll.setData(
+          { emotionTagId, orderBy },
+          context.previousPosts,
+        );
+      }
+    },
+
+    onSettled() {
+      void utils.post.getAll.invalidate({ emotionTagId, orderBy });
     },
   });
 
   const handleStampClick = useCallback(
     (postId: string, type: string, native?: string) => {
       if (!clientId) return;
-
-      void addStamp.mutate({ postId, type, native: native ?? type });
+      const input: StampInput = {
+        postId,
+        type,
+        native: native ?? type,
+        anonymousId: clientId,
+      };
+      addStamp(input);
     },
-    [clientId, addStamp],
+    [addStamp, clientId],
   );
 
   return {
-    clientId,
     handleStampClick,
+    clientId,
   };
 }

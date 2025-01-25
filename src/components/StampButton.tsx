@@ -2,20 +2,40 @@
 
 import { motion } from "framer-motion";
 
+interface Stamp {
+  id: string;
+  type: string;
+  anonymousId: string;
+  postId: string;
+  createdAt: Date;
+  native: string;
+}
+
 interface StampButtonProps {
   type: string;
   postId: string;
-  stamps: {
-    id: string;
-    type: string;
-    anonymousId: string;
-    postId: string;
-    createdAt: Date;
-    native: string;
-  }[];
+  stamps: Stamp[];
   clientId: string | undefined;
   onStampClick: (postId: string, type: string) => void;
   showCount?: boolean;
+}
+
+function getStampCount(stamps: Stamp[], type: string): number {
+  return stamps.filter((stamp) => stamp.type === type).length;
+}
+
+function isStampActive(
+  stamps: Stamp[],
+  type: string,
+  clientId: string | undefined,
+): boolean {
+  return stamps.some(
+    (stamp) => stamp.type === type && stamp.anonymousId === clientId,
+  );
+}
+
+function getStampNative(stamps: Stamp[], type: string): string {
+  return stamps.find((stamp) => stamp.type === type)?.native ?? type;
 }
 
 export function StampButton({
@@ -26,12 +46,9 @@ export function StampButton({
   onStampClick,
   showCount = true,
 }: StampButtonProps) {
-  const isActive = stamps?.some(
-    (stamp) => stamp.type === type && stamp.anonymousId === clientId,
-  );
-  const count = stamps?.filter((stamp) => stamp.type === type).length ?? 0;
-  // スタンプの絵文字を取得
-  const native = stamps.find((stamp) => stamp.type === type)?.native ?? type;
+  const isActive = isStampActive(stamps, type, clientId);
+  const count = getStampCount(stamps, type);
+  const native = getStampNative(stamps, type);
 
   return (
     <motion.button
@@ -42,10 +59,17 @@ export function StampButton({
           ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
       }`}
-      aria-label={`${type}ボタン`}
+      aria-label={`${native}スタンプを${isActive ? "削除" : "追加"}`}
+      data-testid="stamp-button"
     >
-      <span className="text-base leading-none">{native}</span>
-      {showCount && <span className="min-w-3 font-medium">{count}</span>}
+      <span className="text-base leading-none" data-testid="stamp-emoji">
+        {native}
+      </span>
+      {showCount && (
+        <span className="min-w-3 font-medium" data-testid="stamp-count">
+          {count}
+        </span>
+      )}
     </motion.button>
   );
 }
