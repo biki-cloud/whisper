@@ -56,7 +56,7 @@ export function StampPicker({ onSelect, disabled }: StampPickerProps) {
           onEmojiSelect={(emoji: EmojiMartEmoji) => {
             // 選択された絵文字をそのままスタンプとして使用
             onSelect({
-              type: emoji.id,
+              type: emoji.native,
               native: emoji.native,
             });
           }}
