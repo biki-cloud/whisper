@@ -7,18 +7,20 @@ import { getEmotionEmoji } from "~/utils/emotions";
 import { type StampType } from "~/types/stamps";
 import { stampConfig } from "~/utils/stamps";
 import { Card, CardContent } from "~/components/ui/card";
-import { Filter, SortDesc, SortAsc, Loader2 } from "lucide-react";
+import { Filter, SortDesc, SortAsc, Loader2, RotateCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { EMOTION_TAGS } from "~/constants/emotions";
+import { Button } from "~/components/ui/button";
 
 export function PostList() {
   const utils = api.useContext();
   const [emotionTagId, setEmotionTagId] = useState<string | undefined>();
   const [orderBy, setOrderBy] = useState<"desc" | "asc">("desc");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { data: emotionTags } = api.emotionTag.getAll.useQuery();
 
-  const { data, isLoading } = api.post.getAll.useInfiniteQuery(
+  const { data, isLoading, refetch } = api.post.getAll.useInfiniteQuery(
     {
       limit: 10,
       emotionTagId,
@@ -28,6 +30,12 @@ export function PostList() {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     },
   );
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
 
   const addStamp = api.post.addStamp.useMutation({
     onMutate: async ({ postId, type }) => {
@@ -112,9 +120,22 @@ export function PostList() {
 
   const filterUI = (
     <div className="sticky top-0 z-10 mb-6 space-y-4 rounded-lg bg-background/80 p-4 shadow-sm backdrop-blur-sm">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Filter className="h-4 w-4" />
-        <span>フィルター</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          <span>フィルター</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => void handleRefresh()}
+          disabled={isRefreshing}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <RotateCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+        </Button>
       </div>
       <div className="flex flex-wrap gap-4">
         <select

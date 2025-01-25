@@ -10,6 +10,7 @@ import type {
   UseTRPCMutationOptions,
 } from "@trpc/react-query/shared";
 import type { TRPCClientErrorLike } from "@trpc/client";
+import { EMOTION_TAGS } from "~/constants/emotions";
 
 type Post = {
   id: string;
@@ -47,11 +48,10 @@ jest.mock("next/navigation", () => ({
 }));
 
 // APIモックの設定
-const mockEmotionTags = [
-  { id: "1", name: "怒り" },
-  { id: "2", name: "悲しみ" },
-  { id: "3", name: "不安" },
-];
+const mockEmotionTags = EMOTION_TAGS.map((tag, index) => ({
+  id: String(index + 1),
+  name: tag.name,
+}));
 
 jest.mock("~/utils/api", () => ({
   api: {
@@ -89,36 +89,37 @@ describe("PostForm", () => {
   it("フォームが正しくレンダリングされること", () => {
     renderWithProviders(<PostForm />);
 
-    expect(screen.getByLabelText("今日の想いを綴る")).toBeInTheDocument();
-    expect(screen.getByLabelText("感情")).toBeInTheDocument();
+    expect(screen.getByLabelText("メッセージ")).toBeInTheDocument();
+    expect(screen.getByLabelText("今の気持ち")).toBeInTheDocument();
     expect(screen.getByText("投稿する")).toBeInTheDocument();
   });
 
   it("感情タグが正しく表示されること", () => {
     renderWithProviders(<PostForm />);
 
-    mockEmotionTags.forEach((tag) => {
-      expect(screen.getByText(new RegExp(tag.name))).toBeInTheDocument();
+    EMOTION_TAGS.forEach((tag) => {
+      expect(screen.getByText(tag.name)).toBeInTheDocument();
+      expect(screen.getByText(tag.emoji)).toBeInTheDocument();
     });
   });
 
   it("フォームの入力が正しく動作すること", () => {
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情");
+    const contentInput = screen.getByLabelText("メッセージ");
+    const emotionSelect = screen.getByLabelText("今の気持ち");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionTagSelect, { target: { value: "1" } });
+    fireEvent.change(emotionSelect, { target: { value: "1" } });
 
     expect(contentInput).toHaveValue("テスト投稿");
-    expect(emotionTagSelect).toHaveValue("1");
+    expect(emotionSelect).toHaveValue("1");
   });
 
   it("文字数制限が100文字に設定されていること", () => {
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    const contentInput = screen.getByLabelText("メッセージ");
     expect(contentInput).toHaveAttribute("maxLength", "100");
 
     // 100文字のテストデータ
@@ -136,12 +137,12 @@ describe("PostForm", () => {
     const submitButton = screen.getByRole("button", { name: "投稿する" });
     expect(submitButton).toBeDisabled();
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    const contentInput = screen.getByLabelText("メッセージ");
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
     expect(submitButton).toBeDisabled();
 
-    const emotionTagSelect = screen.getByLabelText("感情");
-    fireEvent.change(emotionTagSelect, { target: { value: "1" } });
+    const emotionSelect = screen.getByLabelText("今の気持ち");
+    fireEvent.change(emotionSelect, { target: { value: "1" } });
     expect(submitButton).not.toBeDisabled();
   });
 
@@ -168,11 +169,11 @@ describe("PostForm", () => {
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情");
+    const contentInput = screen.getByLabelText("メッセージ");
+    const emotionSelect = screen.getByLabelText("今の気持ち");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionTagSelect, { target: { value: "1" } });
+    fireEvent.change(emotionSelect, { target: { value: "1" } });
 
     fireEvent.click(screen.getByText("投稿する"));
 
@@ -182,7 +183,7 @@ describe("PostForm", () => {
         emotionTagId: "1",
       });
       expect(contentInput).toHaveValue("");
-      expect(emotionTagSelect).toHaveValue("");
+      expect(emotionSelect).toHaveValue("");
       expect(mockPush).toHaveBeenCalledWith("/");
       expect(mockInvalidate).toHaveBeenCalled();
     });
@@ -191,10 +192,10 @@ describe("PostForm", () => {
   it("投稿成功時に適切な処理が行われること", async () => {
     const mockMutate = jest.fn().mockImplementation((_data) => {
       setTimeout(() => {
-        const contentInput = screen.getByLabelText("今日の想いを綴る");
-        const emotionTagSelect = screen.getByLabelText("感情");
+        const contentInput = screen.getByLabelText("メッセージ");
+        const emotionSelect = screen.getByLabelText("今の気持ち");
         fireEvent.change(contentInput, { target: { value: "" } });
-        fireEvent.change(emotionTagSelect, { target: { value: "" } });
+        fireEvent.change(emotionSelect, { target: { value: "" } });
         mockPush("/");
         mockInvalidate();
       }, 0);
@@ -212,11 +213,11 @@ describe("PostForm", () => {
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情");
+    const contentInput = screen.getByLabelText("メッセージ");
+    const emotionSelect = screen.getByLabelText("今の気持ち");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionTagSelect, { target: { value: "1" } });
+    fireEvent.change(emotionSelect, { target: { value: "1" } });
 
     fireEvent.click(screen.getByText("投稿する"));
 
@@ -226,7 +227,7 @@ describe("PostForm", () => {
         emotionTagId: "1",
       });
       expect(contentInput).toHaveValue("");
-      expect(emotionTagSelect).toHaveValue("");
+      expect(emotionSelect).toHaveValue("");
       expect(mockPush).toHaveBeenCalledWith("/");
       expect(mockInvalidate).toHaveBeenCalled();
     });
@@ -274,11 +275,11 @@ describe("PostForm", () => {
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情");
+    const contentInput = screen.getByLabelText("メッセージ");
+    const emotionSelect = screen.getByLabelText("今の気持ち");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionTagSelect, { target: { value: "1" } });
+    fireEvent.change(emotionSelect, { target: { value: "1" } });
 
     fireEvent.click(screen.getByText("投稿する"));
 
@@ -332,11 +333,11 @@ describe("PostForm", () => {
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情");
+    const contentInput = screen.getByLabelText("メッセージ");
+    const emotionSelect = screen.getByLabelText("今の気持ち");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionTagSelect, { target: { value: "1" } });
+    fireEvent.change(emotionSelect, { target: { value: "1" } });
 
     fireEvent.click(screen.getByText("投稿する"));
 
@@ -351,7 +352,7 @@ describe("PostForm", () => {
   it("文字数制限が正しく機能すること", () => {
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
+    const contentInput = screen.getByLabelText("メッセージ");
     const testContent = "a".repeat(100);
 
     fireEvent.change(contentInput, { target: { value: testContent } });
@@ -455,17 +456,17 @@ describe("PostForm", () => {
 
     renderWithProviders(<PostForm />);
 
-    const contentInput = screen.getByLabelText("今日の想いを綴る");
-    const emotionTagSelect = screen.getByLabelText("感情");
+    const contentInput = screen.getByLabelText("メッセージ");
+    const emotionSelect = screen.getByLabelText("今の気持ち");
 
     fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionTagSelect, { target: { value: "1" } });
+    fireEvent.change(emotionSelect, { target: { value: "1" } });
 
     fireEvent.click(screen.getByText("投稿する"));
 
     await waitFor(() => {
       expect(contentInput).toHaveValue("");
-      expect(emotionTagSelect).toHaveValue("");
+      expect(emotionSelect).toHaveValue("");
       expect(mockPush).toHaveBeenCalledWith("/");
       expect(mockInvalidate).toHaveBeenCalled();
     });

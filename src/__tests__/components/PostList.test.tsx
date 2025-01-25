@@ -866,4 +866,77 @@ describe("PostList", () => {
       expect(mockContext.post.getAll.invalidate).toHaveBeenCalled();
     }
   });
+
+  it("更新ボタンをクリックするとデータが再取得される", async () => {
+    const mockRefetch = jest.fn();
+    mockGetAllQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "clh1234567890",
+                  name: "怒り",
+                },
+                anonymousId: "anonymous-1",
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+      refetch: mockRefetch,
+    });
+
+    render(<WrappedPostList />);
+    const refreshButton = screen.getByRole("button", { name: "" });
+    await fireEvent.click(refreshButton);
+
+    expect(mockRefetch).toHaveBeenCalled();
+  });
+
+  it("更新中はボタンが無効化される", async () => {
+    const mockRefetch = jest.fn(
+      () => new Promise((resolve) => setTimeout(resolve, 100)),
+    );
+    mockGetAllQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "clh1234567890",
+                  name: "怒り",
+                },
+                anonymousId: "anonymous-1",
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+      refetch: mockRefetch,
+    });
+
+    render(<WrappedPostList />);
+    const refreshButton = screen.getByRole("button", { name: "" });
+
+    await fireEvent.click(refreshButton);
+    expect(refreshButton).toBeDisabled();
+
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(refreshButton).not.toBeDisabled();
+  });
 });

@@ -17,6 +17,7 @@ import { getEmotionEmoji } from "~/utils/emotions";
 import { motion } from "framer-motion";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
+import { EMOTION_TAGS } from "~/constants/emotions";
 
 export function PostForm() {
   const router = useRouter();
@@ -55,6 +56,7 @@ export function PostForm() {
       transition={{ duration: 0.3 }}
       onSubmit={handleSubmit}
       className="space-y-6"
+      data-testid="post-form"
     >
       {error && (
         <Alert
@@ -71,13 +73,14 @@ export function PostForm() {
         <Select value={emotionTagId} onValueChange={setEmotionTagId}>
           <SelectTrigger
             id="emotion"
-            className="bg-background/50 border-input/50 hover:bg-background/80"
+            className="border-input/50 bg-background/50 hover:bg-background/80"
           >
             <SelectValue placeholder="感情を選択してください" />
           </SelectTrigger>
           <SelectContent>
-            {emotionTags?.map((tag) => {
-              const emotion = getEmotionEmoji(tag.id, tag.name);
+            {EMOTION_TAGS.map((emotion) => {
+              const tag = emotionTags?.find((t) => t.name === emotion.name);
+              if (!tag) return null;
               return (
                 <SelectItem
                   key={tag.id}
@@ -86,7 +89,7 @@ export function PostForm() {
                 >
                   <span className="flex items-center gap-2">
                     <span className="text-lg">{emotion.emoji}</span>
-                    {tag.name}
+                    {emotion.name}
                   </span>
                 </SelectItem>
               );
@@ -104,7 +107,7 @@ export function PostForm() {
             setContent(e.target.value)
           }
           placeholder="今の気持ちを自由に書いてみましょう..."
-          className="bg-background/50 border-input/50 hover:bg-background/80 min-h-[150px] resize-none"
+          className="min-h-[150px] resize-none border-input/50 bg-background/50 hover:bg-background/80"
         />
       </div>
 
