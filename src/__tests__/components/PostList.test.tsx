@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { PostList } from "~/components/PostList";
+import { PostList } from "~/components/post/PostList";
 import { withTRPC } from "../utils/test-utils";
 import { api } from "~/utils/api";
 
@@ -91,6 +91,7 @@ jest.mock("~/utils/api", () => ({
                     id: "1",
                     content: "テスト投稿",
                     createdAt: "2025-01-25T14:18:43.000Z",
+                    emotionTagId: "clh1234567890",
                     emotionTag: {
                       id: "clh1234567890",
                       name: "怒り",
@@ -238,14 +239,29 @@ describe("PostList", () => {
                 id: "1",
                 content: "テスト投稿",
                 createdAt: "2025-01-25T14:18:43.000Z",
+                emotionTagId: "clh1234567890",
                 emotionTag: {
                   id: "clh1234567890",
                   name: "怒り",
                 },
                 anonymousId: "anonymous-1",
                 stamps: [
-                  { type: "smile", anonymousId: "anonymous-1" },
-                  { type: "smile", anonymousId: "anonymous-2" },
+                  {
+                    id: "stamp-1",
+                    type: "smile",
+                    anonymousId: "anonymous-1",
+                    postId: "1",
+                    createdAt: new Date(),
+                    native: "😊",
+                  },
+                  {
+                    id: "stamp-2",
+                    type: "smile",
+                    anonymousId: "anonymous-2",
+                    postId: "1",
+                    createdAt: new Date(),
+                    native: "😊",
+                  },
                 ],
               },
             ],
