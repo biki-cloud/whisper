@@ -37,15 +37,15 @@ export function StampButton({
     <motion.button
       whileTap={{ scale: 0.95 }}
       onClick={() => onStampClick(postId, type)}
-      className={`inline-flex items-center gap-0.5 rounded-full px-1 py-0.5 text-[10px] transition-all duration-200 ${
+      className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs transition-all duration-200 ${
         isActive
           ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
       }`}
       aria-label={`${type}ボタン`}
     >
-      <span className="text-[10px]">{native}</span>
-      {showCount && <span className="min-w-2.5 font-medium">{count}</span>}
+      <span className="text-base leading-none">{native}</span>
+      {showCount && <span className="min-w-3 font-medium">{count}</span>}
     </motion.button>
   );
 }
