@@ -944,4 +944,33 @@ describe("PostList", () => {
     await new Promise((resolve) => setTimeout(resolve, 150));
     expect(refreshButton).not.toBeDisabled();
   });
+
+  it("投稿の感情タグが正しく表示される", () => {
+    mockGetAllQuery.mockReturnValueOnce({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                id: "1",
+                content: "テスト投稿",
+                createdAt: new Date().toISOString(),
+                emotionTag: {
+                  id: "clh1234567890",
+                  name: "怒り",
+                },
+                anonymousId: "anonymous-1",
+                stamps: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+      isLoading: false,
+    });
+
+    render(<WrappedPostList />);
+    expect(screen.getByText("😠 怒り")).toBeInTheDocument();
+  });
 });

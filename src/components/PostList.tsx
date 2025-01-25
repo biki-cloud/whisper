@@ -309,90 +309,86 @@ export function PostList() {
   return (
     <div className="space-y-6">
       {filterUI}
-      <div className="grid gap-4">
-        {posts.map((post: GetAllPostsItem) => (
-          <motion.div
-            key={post.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Card>
-              <CardContent className="p-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(post.createdAt).toLocaleString()}
-                    </div>
-                    {clientId === post.anonymousId && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive/90"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            削除
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              投稿を削除しますか？
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              この操作は取り消せません。また、本日中の再投稿はできません。
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() =>
-                                deletePost.mutate({ postId: post.id })
-                              }
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              削除する
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
-                  <div className="whitespace-pre-wrap">{post.content}</div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StampSelector
-                      postId={post.id}
-                      stamps={post.stamps}
-                      clientId={clientId}
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      {Object.keys(stampConfig).map((type) => {
-                        const stampCount = post.stamps.filter(
-                          (stamp) => stamp.type === type,
-                        ).length;
-                        if (stampCount === 0) return null;
-                        return (
-                          <StampButton
-                            key={type}
-                            type={type as StampType}
-                            postId={post.id}
-                            stamps={post.stamps}
-                            clientId={clientId}
-                            onStampClick={(postId, type) =>
-                              addStamp.mutate({ postId, type })
-                            }
-                          />
-                        );
+      {posts.length === 0 ? (
+        <div className="flex h-64 items-center justify-center text-muted-foreground">
+          投稿がありません
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <Card key={post.id}>
+              <CardContent className="space-y-4 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(post.createdAt).toLocaleString("ja-JP", {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
                       })}
-                    </div>
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="text-sm"
+                      onClick={() => setEmotionTagId(post.emotionTag.id)}
+                    >
+                      {
+                        EMOTION_TAGS.find(
+                          (e) => e.name === post.emotionTag.name,
+                        )?.emoji
+                      }{" "}
+                      {post.emotionTag.name}
+                    </Button>
                   </div>
+                  {post.anonymousId === clientId && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                          <span className="ml-2">削除</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>投稿の削除</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            この投稿を削除してもよろしいですか？
+                            本日の再投稿はできません。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() =>
+                              deletePost.mutate({ postId: post.id })
+                            }
+                          >
+                            削除する
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+                <p className="whitespace-pre-wrap break-words text-sm">
+                  {post.content}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <StampSelector
+                    postId={post.id}
+                    stamps={post.stamps}
+                    clientId={clientId}
+                  />
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
