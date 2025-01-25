@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { api } from "~/utils/api";
 import { useClientId } from "~/hooks/useClientId";
-import type { RouterInputs, RouterOutputs } from "~/utils/api";
+import type { RouterOutputs } from "~/utils/api";
 
 type Post = RouterOutputs["post"]["getAll"]["items"][number];
 type PostResponse = RouterOutputs["post"]["getAll"];
@@ -37,7 +37,7 @@ interface StampMutationOptions {
 export function usePostStamps(
   emotionTagId?: string,
   orderBy: "asc" | "desc" = "desc",
-  options: StampMutationOptions = {},
+  _: StampMutationOptions = {},
 ) {
   const { clientId } = useClientId();
   const utils = api.useContext();
