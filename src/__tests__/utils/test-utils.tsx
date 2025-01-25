@@ -26,6 +26,16 @@ export function renderWithProviders(ui: React.ReactElement) {
   });
 }
 
+export function withTRPC<T extends React.ComponentType<any>>(Component: T): T {
+  return function WrappedComponent(props: React.ComponentProps<T>) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Component {...props} />
+      </QueryClientProvider>
+    );
+  } as T;
+}
+
 export { api };
 
 // モックの設定

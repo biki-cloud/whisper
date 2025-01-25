@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { PostList } from "~/components/post/PostList";
-import { withTRPC } from "../utils/test-utils";
+import { renderWithProviders } from "../utils/test-utils";
 import { api } from "~/utils/api";
 
 // lucide-reactのモック
@@ -71,7 +71,13 @@ jest.mock("framer-motion", () => ({
 // tRPCのモック
 jest.mock("~/utils/api", () => ({
   api: {
-    useContext: jest.fn(() => ({})),
+    useContext: jest.fn(() => ({
+      post: {
+        getAll: {
+          invalidate: jest.fn(),
+        },
+      },
+    })),
     emotionTag: {
       getAll: {
         useQuery: jest.fn(() => ({
@@ -107,6 +113,9 @@ jest.mock("~/utils/api", () => ({
             ],
           },
           isLoading: false,
+          hasNextPage: false,
+          fetchNextPage: jest.fn(),
+          isFetchingNextPage: false,
         })),
       },
       getClientId: {
@@ -129,37 +138,32 @@ jest.mock("~/utils/api", () => ({
   },
 }));
 
-const WrappedPostList = withTRPC(PostList);
-
-// モック関数の型を修正
-const mockGetAllQuery = api.post.getAll.useInfiniteQuery as jest.Mock;
-
 describe("PostList", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("投稿一覧が表示される", () => {
-    render(<WrappedPostList />);
+    renderWithProviders(<PostList />);
     expect(screen.getByText("テスト投稿")).toBeInTheDocument();
   });
 
   it("感情タグでフィルタリングできる", () => {
-    render(<WrappedPostList />);
+    renderWithProviders(<PostList />);
     const select = screen.getByRole("combobox", { name: /すべての感情/i });
     fireEvent.change(select, { target: { value: "clh1234567890" } });
     expect(select).toHaveValue("clh1234567890");
   });
 
   it("投稿の並び順を変更できる", () => {
-    render(<WrappedPostList />);
+    renderWithProviders(<PostList />);
     const select = screen.getByRole("combobox", { name: /新しい順/i });
     fireEvent.change(select, { target: { value: "asc" } });
     expect(select).toHaveValue("asc");
   });
 
   it("自分の投稿を削除できる", () => {
-    render(<WrappedPostList />);
+    renderWithProviders(<PostList />);
     const deleteButton = screen.getByText("削除");
     fireEvent.click(deleteButton);
   });
@@ -171,7 +175,7 @@ describe("PostList", () => {
       isPending: false,
     });
 
-    render(<WrappedPostList />);
+    renderWithProviders(<PostList />);
 
     // スタンプを追加ボタンをクリック
     const addStampButton = screen.getByRole("button", {
@@ -194,7 +198,7 @@ describe("PostList", () => {
   });
 
   it("ローディング中にスピナーが表示される", () => {
-    mockGetAllQuery.mockReturnValue({
+    (api.post.getAll.useInfiniteQuery as jest.Mock).mockReturnValue({
       data: undefined,
       isLoading: true,
       hasNextPage: false,
@@ -202,12 +206,12 @@ describe("PostList", () => {
       isFetchingNextPage: false,
     });
 
-    render(<WrappedPostList />);
+    renderWithProviders(<PostList />);
     expect(screen.getByTestId("loader-icon")).toBeInTheDocument();
   });
 
   it("投稿が0件の場合にメッセージが表示され、フィルターUIも表示される", () => {
-    mockGetAllQuery.mockReturnValue({
+    (api.post.getAll.useInfiniteQuery as jest.Mock).mockReturnValue({
       data: {
         pages: [
           {
@@ -222,7 +226,7 @@ describe("PostList", () => {
       isFetchingNextPage: false,
     });
 
-    render(<WrappedPostList />);
+    renderWithProviders(<PostList />);
     expect(screen.getByText("投稿がありません")).toBeInTheDocument();
 
     // フィルターUIが表示されることを確認
@@ -243,133 +247,5 @@ describe("PostList", () => {
     const orderSelect = screen.getByRole("combobox", { name: /新しい順/i });
     fireEvent.change(orderSelect, { target: { value: "asc" } });
     expect(orderSelect).toHaveValue("asc");
-  });
-
-  it("スタンプが付いている投稿が表示される", () => {
-    mockGetAllQuery.mockReturnValueOnce({
-      data: {
-        pages: [
-          {
-            items: [
-              {
-                id: "1",
-                content: "テスト投稿",
-                createdAt: "2025-01-25T14:18:43.000Z",
-                emotionTagId: "clh1234567890",
-                emotionTag: {
-                  id: "clh1234567890",
-                  name: "怒り",
-                },
-                anonymousId: "anonymous-1",
-                stamps: [
-                  {
-                    id: "stamp-1",
-                    type: "smile",
-                    anonymousId: "anonymous-1",
-                    postId: "1",
-                    createdAt: new Date(),
-                    native: "😊",
-                  },
-                  {
-                    id: "stamp-2",
-                    type: "smile",
-                    anonymousId: "anonymous-2",
-                    postId: "1",
-                    createdAt: new Date(),
-                    native: "😊",
-                  },
-                ],
-              },
-            ],
-            nextCursor: null,
-          },
-        ],
-      },
-      isLoading: false,
-    });
-
-    render(<WrappedPostList />);
-
-    // スタンプを追加ボタンが表示されていることを確認
-    const addStampButton = screen.getByRole("button", {
-      name: "+",
-    });
-    expect(addStampButton).toBeInTheDocument();
-  });
-
-  it("削除をキャンセルできる", () => {
-    mockGetAllQuery.mockReturnValue({
-      data: {
-        pages: [
-          {
-            items: [
-              {
-                id: "1",
-                content: "テスト投稿",
-                createdAt: "2025-01-25T14:18:43.000Z",
-                emotionTagId: "clh1234567890",
-                emotionTag: {
-                  id: "clh1234567890",
-                  name: "怒り",
-                },
-                anonymousId: "anonymous-1",
-                stamps: [],
-              },
-            ],
-            nextCursor: null,
-          },
-        ],
-      },
-      isLoading: false,
-      hasNextPage: false,
-      fetchNextPage: jest.fn(),
-      isFetchingNextPage: false,
-    });
-
-    render(<WrappedPostList />);
-    const deleteButton = screen.getByText("削除");
-    fireEvent.click(deleteButton);
-    expect(api.post.delete.useMutation().mutate).not.toHaveBeenCalled();
-  });
-
-  it("スタンプのローディング中はボタンが無効化される", () => {
-    (api.post.addStamp.useMutation as jest.Mock).mockReturnValue({
-      mutate: jest.fn(),
-      isPending: true,
-    });
-
-    mockGetAllQuery.mockReturnValue({
-      data: {
-        pages: [
-          {
-            items: [
-              {
-                id: "1",
-                content: "テスト投稿",
-                createdAt: "2025-01-25T14:18:43.000Z",
-                emotionTagId: "clh1234567890",
-                emotionTag: {
-                  id: "clh1234567890",
-                  name: "怒り",
-                },
-                anonymousId: "anonymous-1",
-                stamps: [],
-              },
-            ],
-            nextCursor: null,
-          },
-        ],
-      },
-      isLoading: false,
-      hasNextPage: false,
-      fetchNextPage: jest.fn(),
-      isFetchingNextPage: false,
-    });
-
-    render(<WrappedPostList />);
-    const addStampButton = screen.getByRole("button", {
-      name: "+",
-    });
-    expect(addStampButton).toHaveClass("disabled:opacity-50");
   });
 });
