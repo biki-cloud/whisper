@@ -44,25 +44,51 @@ export function usePostStamps(
 
   const { mutate: addStamp } = api.post.addStamp.useMutation({
     async onMutate(variables) {
-      await utils.post.getAll.cancel();
-      const previousPosts = utils.post.getAll.getData({
+      console.log("🚀 onMutate called with variables:", variables);
+
+      const previousPosts = utils.post.getAll.getInfiniteData({
+        limit: 10,
         emotionTagId,
         orderBy,
       });
+      console.log("📦 Previous posts state:", previousPosts);
 
-      if (previousPosts) {
-        utils.post.getAll.setData(
-          { emotionTagId, orderBy },
-          {
-            ...previousPosts,
-            items: previousPosts.items.map((post) => {
-              if (post.id === variables.postId) {
+      utils.post.getAll.setInfiniteData(
+        { limit: 10, emotionTagId, orderBy },
+        (old) => {
+          if (!old) return { pages: [], pageParams: [] };
+          console.log("🔄 Updating infinite data");
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((post) => {
+                if (post.id !== variables.postId) return post;
+                console.log("🎯 Updating post with ID:", post.id);
+
+                // 既存のスタンプがあれば削除、なければ追加
+                const existingStamp = post.stamps.find(
+                  (s) =>
+                    s.type === variables.type && s.anonymousId === clientId,
+                );
+
+                if (existingStamp) {
+                  console.log("🗑️ Removing existing stamp:", existingStamp);
+                  return {
+                    ...post,
+                    stamps: post.stamps.filter(
+                      (s) => s.id !== existingStamp.id,
+                    ),
+                  };
+                }
+
+                console.log("➕ Adding new stamp");
                 return {
                   ...post,
                   stamps: [
                     ...post.stamps,
                     {
-                      id: "temp",
+                      id: `temp-${Date.now()}`,
                       type: variables.type,
                       anonymousId: clientId ?? "",
                       postId: variables.postId,
@@ -71,33 +97,38 @@ export function usePostStamps(
                     } as Stamp,
                   ],
                 };
-              }
-              return post;
-            }),
-          },
-        );
-      }
+              }),
+            })),
+          };
+        },
+      );
 
       return { previousPosts };
     },
 
     onError(error, variables, context) {
+      console.error("❌ Error occurred:", error);
+      console.log("🔄 Rolling back to previous state");
       if (context?.previousPosts) {
-        utils.post.getAll.setData(
-          { emotionTagId, orderBy },
-          context.previousPosts,
+        utils.post.getAll.setInfiniteData(
+          { limit: 10, emotionTagId, orderBy },
+          (old) => context.previousPosts as any,
         );
       }
     },
 
-    onSettled() {
-      void utils.post.getAll.invalidate({ emotionTagId, orderBy });
+    onSuccess(data, variables) {
+      console.log("✅ Mutation succeeded:", { data, variables });
     },
   });
 
   const handleStampClick = useCallback(
     (postId: string, type: string, native?: string) => {
-      if (!clientId) return;
+      console.log("👆 Stamp clicked:", { postId, type, native });
+      if (!clientId) {
+        console.warn("⚠️ No clientId available");
+        return;
+      }
       const input: StampInput = {
         postId,
         type,
