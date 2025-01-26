@@ -15,6 +15,10 @@ const withPWA = nextPWA({
 /** @type {import("next").NextConfig} */
 const config = {
   reactStrictMode: true,
+  // pinoの設定に必要
+  experimental: {
+    serverComponentsExternalPackages: ["pino"],
+  },
 };
 
 export default withPWA(config);

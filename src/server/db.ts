@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-
 import { env } from "~/env";
 
 const createPrismaClient = () =>
@@ -58,10 +57,9 @@ function bindParamsToQuery(query: string, params: string): string {
 if (env.NODE_ENV !== "production") {
   globalForPrisma.prisma = db;
   db.$on("query", (e) => {
-    console.log("--------------------------------");
-    // console.log("Query    : " + e.query);
-    console.log("Params   : " + e.params);
-    console.log("Bound Query: " + bindParamsToQuery(e.query, e.params));
-    console.log("Duration : " + e.duration + "ms");
+    // e.queryが"COMMIT, BEGIN, "DEALLOCATE ALL"のような場合はログに出力しない
+    if (!/^(COMMIT|BEGIN|DEALLOCATE ALL)/.test(e.query)) {
+      console.log("[Prisma] Query: " + bindParamsToQuery(e.query, e.params));
+    }
   });
 }

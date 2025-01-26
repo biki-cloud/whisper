@@ -5,6 +5,9 @@ import { PostFilter } from "./PostFilter";
 import { PostCard } from "./PostCard";
 import { usePostList } from "~/hooks/post/usePostList";
 import { usePostStamps } from "~/hooks/post/usePostStamps";
+import { logger } from "~/lib/logger/client";
+
+const postLogger = logger.child({ component: "PostList" });
 
 export function PostList() {
   const {
@@ -22,6 +25,7 @@ export function PostList() {
   const { clientId } = usePostStamps(emotionTagId, orderBy);
 
   if (isLoading) {
+    postLogger.info("投稿一覧を読み込み中");
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -29,16 +33,30 @@ export function PostList() {
     );
   }
 
+  postLogger.info(
+    { postsCount: posts.length, emotionTagId, orderBy },
+    "投稿一覧を表示",
+  );
+
   return (
     <div className="space-y-6">
       <PostFilter
         emotionTags={emotionTags}
         emotionTagId={emotionTagId}
-        setEmotionTagId={setEmotionTagId}
+        setEmotionTagId={(id) => {
+          postLogger.info({ emotionTagId: id }, "感情タグでフィルター");
+          setEmotionTagId(id);
+        }}
         orderBy={orderBy}
-        setOrderBy={setOrderBy}
+        setOrderBy={(order) => {
+          postLogger.info({ orderBy: order }, "表示順を変更");
+          setOrderBy(order);
+        }}
         isRefreshing={isRefreshing}
-        onRefresh={handleRefresh}
+        onRefresh={() => {
+          postLogger.info("投稿一覧を更新");
+          handleRefresh();
+        }}
       />
       {posts.length === 0 ? (
         <div className="flex h-64 items-center justify-center text-muted-foreground">
