@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { api } from "~/utils/api";
 import { useClientId } from "~/hooks/useClientId";
 import type { RouterOutputs } from "~/utils/api";
+import type { InfiniteData } from "@tanstack/react-query";
 
 type Post = RouterOutputs["post"]["getAll"]["items"][number];
 type PostResponse = RouterOutputs["post"]["getAll"];
@@ -17,7 +18,7 @@ interface StampInput {
 }
 
 interface StampMutationContext {
-  previousPosts: PostResponse | undefined;
+  previousPosts: InfiniteData<PostResponse> | undefined;
 }
 
 interface StampMutationError {
@@ -112,7 +113,10 @@ export function usePostStamps(
       if (context?.previousPosts) {
         utils.post.getAll.setInfiniteData(
           { limit: 10, emotionTagId, orderBy },
-          (old) => context.previousPosts as any,
+          () => ({
+            pages: context.previousPosts?.pages ?? [],
+            pageParams: context.previousPosts?.pageParams ?? [],
+          }),
         );
       }
     },
