@@ -1,5 +1,4 @@
 import type { EmojiMartData, Emoji as EmojiMartEmoji } from "@emoji-mart/data";
-import type { Post, PostWithRelations } from "./post";
 
 // スタンプの型をstring型に変更（emoji-martのIDを受け入れるため）
 export type StampType = string;
