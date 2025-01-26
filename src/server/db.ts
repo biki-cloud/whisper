@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { env } from "~/env";
-import { logger } from "~/lib/logger/server";
+import { getLogger } from "~/lib/logger/server";
+
+const logger = getLogger("db");
 
 const createPrismaClient = () =>
   new PrismaClient({
