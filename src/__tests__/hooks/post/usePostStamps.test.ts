@@ -34,6 +34,20 @@ jest.mock("~/utils/api", () => ({
           })),
           setData: jest.fn(),
           invalidate: jest.fn(),
+          getInfiniteData: jest.fn(() => ({
+            pages: [
+              {
+                items: [
+                  {
+                    id: "post1",
+                    stamps: [],
+                  },
+                ],
+              },
+            ],
+            pageParams: [],
+          })),
+          setInfiniteData: jest.fn(),
         },
       },
     })),
@@ -59,6 +73,8 @@ describe("usePostStamps", () => {
   let mockCancel: jest.Mock;
   let mockInvalidate: jest.Mock;
   let mockMutate: jest.Mock;
+  let mockGetInfiniteData: jest.Mock;
+  let mockSetInfiniteData: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -74,6 +90,20 @@ describe("usePostStamps", () => {
     mockInvalidate = jest.fn();
     mockSetData = jest.fn();
     mockMutate = jest.fn();
+    mockGetInfiniteData = jest.fn(() => ({
+      pages: [
+        {
+          items: [
+            {
+              id: "post1",
+              stamps: [],
+            },
+          ],
+        },
+      ],
+      pageParams: [],
+    }));
+    mockSetInfiniteData = jest.fn();
 
     (api.useContext as jest.Mock).mockReturnValue({
       post: {
@@ -82,6 +112,8 @@ describe("usePostStamps", () => {
           getData: mockGetData,
           setData: mockSetData,
           invalidate: mockInvalidate,
+          getInfiniteData: mockGetInfiniteData,
+          setInfiniteData: mockSetInfiniteData,
         },
       },
     });
@@ -125,18 +157,25 @@ describe("usePostStamps", () => {
       native: "😊",
     };
 
-    const previousPosts: Post[] = [
-      {
-        id: "post1",
-        content: "test",
-        anonymousId: "anon1",
-        emotionTag: mockEmotionTag,
-        stamps: [],
-        createdAt: new Date(),
-      },
-    ];
+    const previousPosts = {
+      pages: [
+        {
+          items: [
+            {
+              id: "post1",
+              content: "test",
+              anonymousId: "anon1",
+              emotionTag: mockEmotionTag,
+              stamps: [],
+              createdAt: new Date(),
+            },
+          ],
+        },
+      ],
+      pageParams: [],
+    };
 
-    mockGetData.mockReturnValue({ items: previousPosts });
+    mockGetInfiniteData.mockReturnValue(previousPosts);
 
     const onMutateCallback = (api.post.addStamp.useMutation as jest.Mock).mock
       .calls[0][0].onMutate;
@@ -146,10 +185,11 @@ describe("usePostStamps", () => {
       native: "😊",
     } as StampInput);
 
-    expect(mockGetData).toHaveBeenCalledWith({
+    expect(mockGetInfiniteData).toHaveBeenCalledWith({
+      limit: 10,
       emotionTagId: "tag1",
       orderBy: "asc",
-    } as GetAllInput);
+    });
   });
 
   it("onMutateが正しく動作すること", async () => {
@@ -161,18 +201,25 @@ describe("usePostStamps", () => {
       native: "😊",
     };
 
-    const previousPosts: Post[] = [
-      {
-        id: "post1",
-        content: "test",
-        anonymousId: "anon1",
-        emotionTag: mockEmotionTag,
-        stamps: [],
-        createdAt: new Date(),
-      },
-    ];
+    const previousPosts = {
+      pages: [
+        {
+          items: [
+            {
+              id: "post1",
+              content: "test",
+              anonymousId: "anon1",
+              emotionTag: mockEmotionTag,
+              stamps: [],
+              createdAt: new Date(),
+            },
+          ],
+        },
+      ],
+      pageParams: [],
+    };
 
-    mockGetData.mockReturnValue({ items: previousPosts });
+    mockGetInfiniteData.mockReturnValue(previousPosts);
 
     const onMutateCallback = (api.post.addStamp.useMutation as jest.Mock).mock
       .calls[0][0].onMutate;
@@ -183,21 +230,30 @@ describe("usePostStamps", () => {
     } as StampInput);
 
     expect(mockCancel).toHaveBeenCalled();
-    expect(mockGetData).toHaveBeenCalled();
-    expect(mockSetData).toHaveBeenCalled();
+    expect(mockGetInfiniteData).toHaveBeenCalledWith({
+      limit: 10,
+      emotionTagId: undefined,
+      orderBy: "desc",
+    });
+    expect(mockSetInfiniteData).toHaveBeenCalled();
   });
 
   it("onErrorが正しく動作すること", () => {
     const previousPosts = {
-      items: [
+      pages: [
         {
-          id: "post1",
-          stamps: [],
+          items: [
+            {
+              id: "post1",
+              stamps: [],
+            },
+          ],
         },
       ],
+      pageParams: [],
     };
 
-    mockGetData.mockReturnValue(previousPosts);
+    mockGetInfiniteData.mockReturnValue(previousPosts);
 
     let onErrorCallback:
       | ((error: any, variables: any, context: any) => void)
@@ -230,9 +286,9 @@ describe("usePostStamps", () => {
       onErrorCallback(error, variables, context);
     }
 
-    expect(mockSetData).toHaveBeenCalledWith(
-      { emotionTagId: undefined, orderBy: "desc" },
-      previousPosts,
+    expect(mockSetInfiniteData).toHaveBeenCalledWith(
+      { limit: 10, emotionTagId: undefined, orderBy: "desc" },
+      expect.any(Function),
     );
   });
 });

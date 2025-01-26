@@ -47,6 +47,8 @@ export function usePostStamps(
     async onMutate(variables) {
       console.log("🚀 onMutate called with variables:", variables);
 
+      await utils.post.getAll.cancel();
+
       const previousPosts = utils.post.getAll.getInfiniteData({
         limit: 10,
         emotionTagId,
