@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { api } from "~/utils/api";
-import type { EmotionTag } from "@prisma/client";
 
 export interface PostWithRelations {
   id: string;
