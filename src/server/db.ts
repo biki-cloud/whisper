@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { env } from "~/env";
 import { logger } from "~/lib/logger/server";
 
-const prismaLogger = logger.child({ component: "PostList" });
+const prismaLogger = logger.child({ component: "PrismaLogger" });
 
 const createPrismaClient = () =>
   new PrismaClient({
