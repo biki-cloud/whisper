@@ -24,7 +24,12 @@ export function usePostList() {
   const [orderBy, setOrderBy] = useState<"desc" | "asc">("desc");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { data: emotionTags } = api.emotionTag.getAll.useQuery();
+  const { data: emotionTags } = api.emotionTag.getAll.useQuery(undefined, {
+    staleTime: 1000 * 60 * 5, // 5分間はキャッシュを使用
+    gcTime: 1000 * 60 * 30, // 30分間キャッシュを保持
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
 
   const { data, isLoading, refetch } = api.post.getAll.useInfiniteQuery(
     {
@@ -34,6 +39,10 @@ export function usePostList() {
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      staleTime: 1000 * 60, // 1分間はキャッシュを使用
+      gcTime: 1000 * 60 * 5, // 5分間キャッシュを保持
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
     },
   );
 

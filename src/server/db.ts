@@ -58,7 +58,7 @@ if (env.NODE_ENV !== "production") {
   globalForPrisma.prisma = db;
   db.$on("query", (e) => {
     // e.queryが"COMMIT, BEGIN, "DEALLOCATE ALL"のような場合はログに出力しない
-    if (!/^(COMMIT|BEGIN|DEALLOCATE ALL)/.test(e.query)) {
+    if (!/^(COMMIT|BEGIN|DEALLOCATE ALL|SELECT 1)/.test(e.query)) {
       console.log("[Prisma] Query: " + bindParamsToQuery(e.query, e.params));
     }
   });
