@@ -1,21 +1,18 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { StampButton } from "~/components/StampButton";
+import type { ClientStamp } from "~/types/stamps";
 
-const mockStamps = [
+const mockStamps: ClientStamp[] = [
   {
     id: "1",
     type: "happy",
     anonymousId: "user1",
-    postId: "post1",
-    createdAt: new Date(),
     native: "😊",
   },
   {
     id: "2",
     type: "happy",
     anonymousId: "user2",
-    postId: "post1",
-    createdAt: new Date(),
     native: "😊",
   },
 ];

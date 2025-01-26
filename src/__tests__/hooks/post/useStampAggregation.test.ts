@@ -1,31 +1,26 @@
 import { renderHook } from "@testing-library/react";
 import { useStampAggregation } from "~/hooks/post/useStampAggregation";
+import type { ClientStamp } from "~/types/stamps";
 
 describe("useStampAggregation", () => {
-  const mockStamps = [
+  const mockStamps: ClientStamp[] = [
     {
       id: "1",
       type: "happy",
       native: "😊",
       anonymousId: "user1",
-      postId: "post1",
-      createdAt: new Date(),
     },
     {
       id: "2",
       type: "happy",
       native: "😊",
       anonymousId: "user2",
-      postId: "post1",
-      createdAt: new Date(),
     },
     {
       id: "3",
       type: "sad",
       native: "😢",
       anonymousId: "user1",
-      postId: "post1",
-      createdAt: new Date(),
     },
   ];
 

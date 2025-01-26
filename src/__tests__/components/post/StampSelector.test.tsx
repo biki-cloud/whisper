@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StampSelector } from "~/components/post/StampSelector";
 import { usePostStamps } from "~/hooks/post/usePostStamps";
+import type { ClientStamp } from "~/types/stamps";
 
 jest.mock("~/hooks/post/usePostStamps");
 
@@ -49,22 +50,18 @@ jest.mock("@emoji-mart/react", () => {
 });
 
 describe("StampSelector", () => {
-  const mockStamps = [
+  const mockStamps: ClientStamp[] = [
     {
       id: "1",
       type: "happy",
       native: "😊",
       anonymousId: "user1",
-      postId: "post1",
-      createdAt: new Date(),
     },
     {
       id: "2",
       type: "happy",
       native: "😊",
       anonymousId: "user2",
-      postId: "post1",
-      createdAt: new Date(),
     },
   ];
 

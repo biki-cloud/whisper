@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Stamp, AggregatedStamp } from "~/types/post";
+import type { Stamp, AggregatedStamp } from "~/types/stamps";
 
 export function useStampAggregation(stamps: Stamp[]) {
   const aggregatedStamps = useMemo(() => {

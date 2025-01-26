@@ -4,9 +4,7 @@ import { StampPicker } from "~/components/StampPicker";
 import { StampButton } from "~/components/StampButton";
 import { usePostStamps } from "~/hooks/post/usePostStamps";
 import { useStampAggregation } from "~/hooks/post/useStampAggregation";
-import type { PostWithRelations } from "~/hooks/post/usePostList";
-
-type Stamp = PostWithRelations["stamps"][number];
+import type { Stamp } from "~/types/stamps";
 
 interface StampSelectorProps {
   postId: string;
@@ -28,11 +26,7 @@ export function StampSelector({ postId, stamps }: StampSelectorProps) {
           key={type}
           type={type}
           postId={postId}
-          stamps={stampsByType.map((s) => ({
-            ...s,
-            postId,
-            createdAt: new Date(),
-          }))}
+          stamps={stampsByType}
           clientId={clientId}
           onStampClick={handleStampClick}
         />

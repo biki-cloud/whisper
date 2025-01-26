@@ -1,15 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-
-interface Stamp {
-  id: string;
-  type: string;
-  anonymousId: string;
-  postId: string;
-  createdAt: Date;
-  native: string;
-}
+import type { Stamp } from "~/types/stamps";
 
 interface StampButtonProps {
   type: string;
@@ -29,13 +21,17 @@ function isStampActive(
   type: string,
   clientId: string | undefined,
 ): boolean {
-  return stamps.some(
-    (stamp) => stamp.type === type && stamp.anonymousId === clientId,
-  );
+  return stamps.some((stamp) => {
+    if ("anonymousId" in stamp) {
+      return stamp.type === type && stamp.anonymousId === clientId;
+    }
+    return false;
+  });
 }
 
 function getStampNative(stamps: Stamp[], type: string): string {
-  return stamps.find((stamp) => stamp.type === type)?.native ?? type;
+  const stamp = stamps.find((s) => s.type === type);
+  return stamp?.native ?? type;
 }
 
 export function StampButton({
