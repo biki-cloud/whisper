@@ -72,7 +72,8 @@ export function usePostStamps(
                 // 既存のスタンプがあれば削除、なければ追加
                 const existingStamp = post.stamps.find(
                   (s) =>
-                    s.type === variables.type && s.anonymousId === clientId,
+                    s.type === variables.type &&
+                    s.anonymousId === variables.anonymousId,
                 );
 
                 if (existingStamp) {
@@ -93,7 +94,7 @@ export function usePostStamps(
                     {
                       id: `temp-${Date.now()}`,
                       type: variables.type,
-                      anonymousId: clientId ?? "",
+                      anonymousId: variables.anonymousId,
                       postId: variables.postId,
                       createdAt: new Date(),
                       native: variables.native,
