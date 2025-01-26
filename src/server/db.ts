@@ -2,8 +2,6 @@ import { PrismaClient } from "@prisma/client";
 import { env } from "~/env";
 import { logger } from "~/lib/logger/server";
 
-const prismaLogger = logger.child({ component: "PrismaLogger" });
-
 const createPrismaClient = () =>
   new PrismaClient({
     log: [
@@ -62,7 +60,7 @@ if (env.NODE_ENV !== "production") {
   db.$on("query", (e) => {
     // e.queryが"COMMIT, BEGIN, "DEALLOCATE ALL"のような場合はログに出力しない
     if (!/^(COMMIT|BEGIN|DEALLOCATE ALL|SELECT 1)/.test(e.query)) {
-      prismaLogger.debug("Query: " + bindParamsToQuery(e.query, e.params));
+      logger.info("Query: " + bindParamsToQuery(e.query, e.params));
     }
   });
 }
