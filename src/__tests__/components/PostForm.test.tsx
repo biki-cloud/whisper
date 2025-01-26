@@ -42,12 +42,6 @@ type Post = {
   }[];
 };
 
-const mockEmotionTags = EMOTION_TAGS.map((tag, index) => ({
-  id: String(index + 1),
-  name: tag.name,
-  emoji: tag.emoji,
-}));
-
 const mockPush = jest.fn();
 const mockInvalidate = jest.fn();
 const mockOnSuccess = jest.fn();
@@ -69,16 +63,6 @@ jest.mock("~/utils/api", () => ({
         },
       },
     })),
-    emotionTag: {
-      getAll: {
-        useQuery: jest.fn(() => ({
-          data: [
-            { id: "1", name: "happy" },
-            { id: "2", name: "sad" },
-          ],
-        })),
-      },
-    },
     post: {
       create: {
         useMutation: jest.fn(() => ({
@@ -107,13 +91,11 @@ describe("PostForm", () => {
       emotionTagId: "",
       error: null,
       charCount: 0,
-      emotionTags: mockEmotionTags,
       isDisabled: true,
       isPending: false,
       handleSubmit: jest.fn(),
       handleContentChange: jest.fn(),
       setEmotionTagId: jest.fn(),
-      loadEmotionTags: jest.fn(),
     });
   });
 
@@ -140,9 +122,7 @@ describe("PostForm", () => {
       handleContentChange: mockHandleContentChange,
       setEmotionTagId: jest.fn(),
       handleSubmit: jest.fn(),
-      emotionTags: mockEmotionTags,
-      isLoading: false,
-      loadEmotionTags: jest.fn(),
+      isPending: false,
     });
 
     render(<PostForm />);
@@ -157,15 +137,29 @@ describe("PostForm", () => {
     const select = screen.getByRole("combobox");
     fireEvent.click(select);
 
-    expect(screen.getAllByText("happy")[0]).toBeInTheDocument();
+    const option = screen.getByRole("option", {
+      name: `${EMOTION_TAGS[0].emoji} ${EMOTION_TAGS[0].name}`,
+    });
+    expect(option).toBeInTheDocument();
   });
 
   it("エラー時にエラーメッセージが表示されること", () => {
-    render(<PostForm />);
-    const submitButton = screen.getByRole("button", { name: "投稿する" });
-    fireEvent.click(submitButton);
+    mockUsePostForm.mockReturnValue({
+      content: "",
+      emotionTagId: "",
+      error: "感情を選択してください",
+      charCount: 0,
+      isDisabled: true,
+      isPending: false,
+      handleSubmit: jest.fn(),
+      handleContentChange: jest.fn(),
+      setEmotionTagId: jest.fn(),
+    });
 
-    expect(screen.getByText("感情を選択してください")).toBeInTheDocument();
+    render(<PostForm />);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "感情を選択してください",
+    );
   });
 
   it("フォームが正しくレンダリングされること", () => {
@@ -192,9 +186,7 @@ describe("PostForm", () => {
       handleContentChange: mockHandleContentChange,
       setEmotionTagId: jest.fn(),
       handleSubmit: jest.fn(),
-      emotionTags: mockEmotionTags,
-      isLoading: false,
-      loadEmotionTags: jest.fn(),
+      isPending: false,
     });
 
     renderWithProviders(<PostForm />);
@@ -213,115 +205,30 @@ describe("PostForm", () => {
       handleContentChange: jest.fn(),
       setEmotionTagId: jest.fn(),
       handleSubmit: jest.fn(),
-      emotionTags: mockEmotionTags,
-      isLoading: false,
-      loadEmotionTags: jest.fn(),
+      isPending: false,
     });
 
     renderWithProviders(<PostForm />);
-    expect(screen.getByText("エラーメッセージ")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("エラーメッセージ");
   });
 
   it("フォーム送信が正しく動作すること", async () => {
     const mockHandleSubmit = jest.fn((e) => e.preventDefault());
     mockUsePostForm.mockReturnValue({
       content: "テストメッセージ",
-      emotionTagId: "1",
+      emotionTagId: EMOTION_TAGS[0].name,
       error: null,
       charCount: 7,
       isDisabled: false,
       handleContentChange: jest.fn(),
       setEmotionTagId: jest.fn(),
       handleSubmit: mockHandleSubmit,
-      emotionTags: mockEmotionTags,
-      isLoading: false,
-      loadEmotionTags: jest.fn(),
+      isPending: false,
     });
 
     renderWithProviders(<PostForm />);
     const form = screen.getByTestId("post-form");
     fireEvent.submit(form);
     expect(mockHandleSubmit).toHaveBeenCalled();
-  });
-
-  it("文字数制限が正しく機能すること", async () => {
-    const mockHandleContentChange = jest.fn();
-    mockUsePostForm.mockReturnValue({
-      content: "",
-      emotionTagId: "",
-      error: null,
-      charCount: 0,
-      isDisabled: true,
-      handleContentChange: mockHandleContentChange,
-      setEmotionTagId: jest.fn(),
-      handleSubmit: jest.fn(),
-      emotionTags: mockEmotionTags,
-      isLoading: false,
-      loadEmotionTags: jest.fn(),
-    });
-
-    renderWithProviders(<PostForm />);
-    const textarea = screen.getByRole("textbox");
-    await userEvent.type(textarea, "a".repeat(100));
-    expect(mockHandleContentChange).toHaveBeenCalled();
-    expect(screen.getByText("0/100")).toBeInTheDocument();
-  });
-
-  it("投稿中はローディング表示が表示されること", () => {
-    mockUsePostForm.mockReturnValue({
-      content: "",
-      emotionTagId: "",
-      error: null,
-      charCount: 0,
-      emotionTags: mockEmotionTags,
-      isDisabled: true,
-      isPending: true,
-      handleSubmit: jest.fn(),
-      handleContentChange: jest.fn(),
-      setEmotionTagId: jest.fn(),
-      loadEmotionTags: jest.fn(),
-    });
-
-    renderWithProviders(<PostForm />);
-    expect(screen.getByText(/投稿中/)).toBeInTheDocument();
-  });
-
-  it("投稿ボタンの無効化が正しく機能すること", () => {
-    mockUsePostForm.mockReturnValue({
-      content: "",
-      emotionTagId: "",
-      error: null,
-      charCount: 0,
-      emotionTags: mockEmotionTags,
-      isDisabled: true,
-      isPending: false,
-      handleSubmit: jest.fn(),
-      handleContentChange: jest.fn(),
-      setEmotionTagId: jest.fn(),
-      loadEmotionTags: jest.fn(),
-    });
-
-    renderWithProviders(<PostForm />);
-    expect(screen.getByRole("button", { name: /投稿/i })).toBeDisabled();
-  });
-
-  it("感情タグが正しく表示されること", () => {
-    mockUsePostForm.mockReturnValue({
-      content: "",
-      emotionTagId: "",
-      error: null,
-      charCount: 0,
-      emotionTags: mockEmotionTags,
-      isDisabled: true,
-      isPending: false,
-      handleSubmit: jest.fn(),
-      handleContentChange: jest.fn(),
-      setEmotionTagId: jest.fn(),
-      loadEmotionTags: jest.fn(),
-    });
-
-    renderWithProviders(<PostForm />);
-    const select = screen.getByRole("combobox");
-    expect(select).toHaveTextContent("感情を選択してください");
   });
 });

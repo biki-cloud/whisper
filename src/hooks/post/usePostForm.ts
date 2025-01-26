@@ -1,8 +1,6 @@
 import { useState } from "react";
-import type { EmotionTag } from "@prisma/client";
 import { useFormState } from "./useFormState";
 import { useFormValidation } from "./useFormValidation";
-import { useEmotionTags } from "./useEmotionTags";
 
 export interface PostFormDeps {
   router: {
@@ -12,9 +10,6 @@ export interface PostFormDeps {
     create: (data: { content: string; emotionTagId: string }) => Promise<void>;
     invalidateQueries: () => Promise<void>;
   };
-  emotionTagApi: {
-    getAll: () => Promise<EmotionTag[]>;
-  };
 }
 
 export function usePostForm(deps: PostFormDeps) {
@@ -22,11 +17,6 @@ export function usePostForm(deps: PostFormDeps) {
   const { state, setContent, setEmotionTagId, setError, resetForm, charCount } =
     useFormState();
   const { validateForm } = useFormValidation();
-  const {
-    emotionTags,
-    error: emotionTagError,
-    loadEmotionTags,
-  } = useEmotionTags(deps.emotionTagApi);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
@@ -62,14 +52,12 @@ export function usePostForm(deps: PostFormDeps) {
   return {
     content: state.content,
     emotionTagId: state.emotionTagId,
-    error: state.error ?? emotionTagError,
-    emotionTags,
+    error: state.error,
     isDisabled: !state.content.trim() || !state.emotionTagId || isPending,
     charCount,
     handleContentChange,
     handleSubmit,
     setEmotionTagId,
     isPending,
-    loadEmotionTags,
   };
 }

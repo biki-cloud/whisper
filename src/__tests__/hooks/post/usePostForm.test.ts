@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import { usePostForm } from "~/hooks/post/usePostForm";
-import type { EmotionTag } from "@prisma/client";
+import { EMOTION_TAGS } from "~/constants/emotions";
 
 describe("usePostForm", () => {
   const mockRouter = {
@@ -12,23 +12,13 @@ describe("usePostForm", () => {
     invalidateQueries: jest.fn(),
   };
 
-  const mockEmotionTagApi = {
-    getAll: jest.fn(),
-  };
-
   const mockDeps = {
     router: mockRouter,
     postApi: mockPostApi,
-    emotionTagApi: mockEmotionTagApi,
   };
-
-  const mockEmotionTags: Pick<EmotionTag, "id" | "name">[] = [
-    { id: "1", name: "happy" },
-  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockDeps.emotionTagApi.getAll.mockResolvedValue(mockEmotionTags);
   });
 
   test("初期状態が正しいこと", () => {
@@ -61,7 +51,7 @@ describe("usePostForm", () => {
       result.current.handleContentChange({
         target: { value: "テストコンテンツ" },
       } as React.ChangeEvent<HTMLTextAreaElement>);
-      result.current.setEmotionTagId("test-tag-id");
+      result.current.setEmotionTagId(EMOTION_TAGS[0].name);
     });
 
     await act(async () => {
@@ -72,7 +62,7 @@ describe("usePostForm", () => {
 
     expect(mockPostApi.create).toHaveBeenCalledWith({
       content: "テストコンテンツ",
-      emotionTagId: "test-tag-id",
+      emotionTagId: EMOTION_TAGS[0].name,
     });
     expect(mockPostApi.invalidateQueries).toHaveBeenCalled();
     expect(mockRouter.push).toHaveBeenCalledWith("/");
@@ -89,7 +79,7 @@ describe("usePostForm", () => {
       result.current.handleContentChange({
         target: { value: "テストコンテンツ" },
       } as React.ChangeEvent<HTMLTextAreaElement>);
-      result.current.setEmotionTagId("test-tag-id");
+      result.current.setEmotionTagId(EMOTION_TAGS[0].name);
     });
 
     await act(async () => {
@@ -100,22 +90,6 @@ describe("usePostForm", () => {
 
     expect(result.current.error).toBe("投稿に失敗しました");
     expect(mockRouter.push).not.toHaveBeenCalled();
-  });
-
-  test("感情タグの読み込みが成功した場合、タグが設定されること", async () => {
-    const mockTags = [
-      { id: "1", name: "happy", native: "😊" },
-      { id: "2", name: "sad", native: "😢" },
-    ];
-    mockEmotionTagApi.getAll.mockResolvedValueOnce(mockTags);
-    const { result } = renderHook(() => usePostForm(mockDeps));
-
-    await act(async () => {
-      await result.current.loadEmotionTags();
-    });
-
-    expect(result.current.emotionTags).toEqual(mockTags);
-    expect(result.current.error).toBeNull();
   });
 
   test("contentを更新できること", () => {
@@ -129,23 +103,11 @@ describe("usePostForm", () => {
     expect(result.current.charCount).toBe(4);
   });
 
-  test("感情タグの読み込みが失敗した場合、エラーが設定されること", async () => {
-    mockDeps.emotionTagApi.getAll.mockRejectedValueOnce(new Error());
-
-    const { result } = renderHook(() => usePostForm(mockDeps));
-
-    await act(async () => {
-      await result.current.loadEmotionTags();
-    });
-
-    expect(result.current.error).toBe("感情タグの読み込みに失敗しました");
-  });
-
   test("バリデーションエラー: 内容が空の場合", async () => {
     const { result } = renderHook(() => usePostForm(mockDeps));
 
     await act(async () => {
-      result.current.setEmotionTagId("1");
+      result.current.setEmotionTagId(EMOTION_TAGS[0].name);
       await result.current.handleSubmit({
         preventDefault: jest.fn(),
       } as unknown as React.FormEvent);

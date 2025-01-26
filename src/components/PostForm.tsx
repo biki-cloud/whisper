@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect } from "react";
+import { memo } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "~/utils/api";
 import { usePostForm } from "~/hooks/post/usePostForm";
@@ -13,7 +13,6 @@ function PostFormBase() {
   const router = useRouter();
   const apiContext = api.useContext();
   const createPost = api.post.create.useMutation();
-  const { data: emotionTags } = api.emotionTag.getAll.useQuery();
 
   const {
     content,
@@ -25,7 +24,6 @@ function PostFormBase() {
     handleContentChange,
     handleSubmit,
     setEmotionTagId,
-    loadEmotionTags,
   } = usePostForm({
     router,
     postApi: {
@@ -36,17 +34,7 @@ function PostFormBase() {
         await apiContext.post.getAll.invalidate();
       },
     },
-    emotionTagApi: {
-      getAll: async () => emotionTags ?? [],
-    },
   });
-
-  useEffect(() => {
-    const load = async () => {
-      await loadEmotionTags();
-    };
-    void load();
-  }, [loadEmotionTags, emotionTags]);
 
   const onSubmit = (e: React.FormEvent) => {
     void handleSubmit(e);
@@ -55,7 +43,6 @@ function PostFormBase() {
   return (
     <form onSubmit={onSubmit} className="space-y-4" data-testid="post-form">
       <EmotionSelect
-        emotionTags={emotionTags ?? []}
         selectedId={emotionTagId}
         onSelect={setEmotionTagId}
         disabled={isPending}

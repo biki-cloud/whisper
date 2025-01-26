@@ -1,10 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { EmotionSelect } from "~/components/post/EmotionSelect";
-
-const mockEmotionTags = [
-  { id: "1", name: "😊 嬉しい" },
-  { id: "2", name: "😢 悲しい" },
-];
+import { EMOTION_TAGS } from "~/constants/emotions";
 
 describe("EmotionSelect", () => {
   const mockOnSelect = jest.fn();
@@ -14,45 +10,28 @@ describe("EmotionSelect", () => {
   });
 
   it("感情タグが正しくレンダリングされること", () => {
-    render(
-      <EmotionSelect
-        emotionTags={mockEmotionTags}
-        selectedId=""
-        onSelect={mockOnSelect}
-      />,
-    );
+    render(<EmotionSelect selectedId="" onSelect={mockOnSelect} />);
 
     expect(screen.getByText("感情を選択してください")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
 
   it("感情タグを選択できること", () => {
-    render(
-      <EmotionSelect
-        emotionTags={mockEmotionTags}
-        selectedId=""
-        onSelect={mockOnSelect}
-      />,
-    );
+    render(<EmotionSelect selectedId="" onSelect={mockOnSelect} />);
 
     const select = screen.getByRole("combobox");
     fireEvent.click(select);
 
-    const option = screen.getByText("😊 嬉しい");
+    const option = screen.getByText(
+      `${EMOTION_TAGS[0].emoji} ${EMOTION_TAGS[0].name}`,
+    );
     fireEvent.click(option);
 
-    expect(mockOnSelect).toHaveBeenCalledWith("1");
+    expect(mockOnSelect).toHaveBeenCalledWith(EMOTION_TAGS[0].name);
   });
 
   it("disabled時に選択できないこと", () => {
-    render(
-      <EmotionSelect
-        emotionTags={mockEmotionTags}
-        selectedId=""
-        onSelect={mockOnSelect}
-        disabled
-      />,
-    );
+    render(<EmotionSelect selectedId="" onSelect={mockOnSelect} disabled />);
 
     const select = screen.getByRole("combobox");
     expect(select).toBeDisabled();
@@ -61,12 +40,13 @@ describe("EmotionSelect", () => {
   it("選択された感情タグが表示されること", () => {
     render(
       <EmotionSelect
-        emotionTags={mockEmotionTags}
-        selectedId="1"
+        selectedId={EMOTION_TAGS[0].name}
         onSelect={mockOnSelect}
       />,
     );
 
-    expect(screen.getByText("😊 嬉しい")).toBeInTheDocument();
+    expect(
+      screen.getByText(`${EMOTION_TAGS[0].emoji} ${EMOTION_TAGS[0].name}`),
+    ).toBeInTheDocument();
   });
 });

@@ -5,17 +5,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import type { EmotionTag } from "@prisma/client";
+import { EMOTION_TAGS } from "~/constants/emotions";
 
 interface EmotionSelectProps {
-  emotionTags: Pick<EmotionTag, "id" | "name">[];
   selectedId: string;
   onSelect: (id: string) => void;
   disabled?: boolean;
 }
 
 export function EmotionSelect({
-  emotionTags,
   selectedId,
   onSelect,
   disabled,
@@ -26,9 +24,9 @@ export function EmotionSelect({
         <SelectValue placeholder="感情を選択してください" />
       </SelectTrigger>
       <SelectContent>
-        {emotionTags.map((tag) => (
-          <SelectItem key={tag.id} value={tag.id}>
-            {tag.name}
+        {EMOTION_TAGS.map((tag) => (
+          <SelectItem key={tag.name} value={tag.name}>
+            {tag.emoji} {tag.name}
           </SelectItem>
         ))}
       </SelectContent>
