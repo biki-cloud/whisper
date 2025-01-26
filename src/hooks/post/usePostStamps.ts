@@ -6,15 +6,20 @@ import { useClientId } from "~/hooks/useClientId";
 import type { RouterOutputs } from "~/utils/api";
 import type { InfiniteData } from "@tanstack/react-query";
 
-type Post = RouterOutputs["post"]["getAll"]["items"][number];
 type PostResponse = RouterOutputs["post"]["getAll"];
-type Stamp = Post["stamps"][number];
+type Stamp = {
+  id: string;
+  type: string;
+  native: string;
+  anonymousId: string;
+  postId: string;
+  createdAt: Date;
+};
 
 interface StampInput {
   postId: string;
   type: string;
   native: string;
-  anonymousId: string;
 }
 
 interface StampMutationContext {
@@ -44,7 +49,7 @@ export function usePostStamps(
   const utils = api.useContext();
 
   const { mutate: addStamp } = api.post.addStamp.useMutation({
-    async onMutate(variables) {
+    async onMutate(variables: StampInput) {
       console.log("🚀 onMutate called with variables:", variables);
 
       await utils.post.getAll.cancel();
@@ -72,8 +77,7 @@ export function usePostStamps(
                 // 既存のスタンプがあれば削除、なければ追加
                 const existingStamp = post.stamps.find(
                   (s) =>
-                    s.type === variables.type &&
-                    s.anonymousId === variables.anonymousId,
+                    s.type === variables.type && s.anonymousId === clientId,
                 );
 
                 if (existingStamp) {
@@ -94,7 +98,7 @@ export function usePostStamps(
                     {
                       id: `temp-${Date.now()}`,
                       type: variables.type,
-                      anonymousId: variables.anonymousId,
+                      anonymousId: clientId,
                       postId: variables.postId,
                       createdAt: new Date(),
                       native: variables.native,
@@ -140,7 +144,6 @@ export function usePostStamps(
         postId,
         type,
         native: native ?? type,
-        anonymousId: clientId,
       };
       addStamp(input);
     },

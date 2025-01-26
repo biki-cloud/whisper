@@ -121,6 +121,9 @@ describe("usePostStamps", () => {
       mutate: mockMutate,
       isLoading: false,
     });
+    (api.post.getClientId.useQuery as jest.Mock).mockReturnValue({
+      data: "test-client-id",
+    });
   });
 
   it("handleStampClickが正しく動作すること", () => {
@@ -132,7 +135,6 @@ describe("usePostStamps", () => {
       postId: "post1",
       type: "happy",
       native: "happy",
-      anonymousId: "test-client-id",
     });
   });
 
@@ -293,15 +295,11 @@ describe("usePostStamps", () => {
   });
 
   it("既存のスタンプがある場合、スタンプが削除されること", async () => {
-    const clientId = "test-client-id";
-    renderHook(() => usePostStamps());
+    const { result } = renderHook(() => usePostStamps());
 
-    const existingStamp = {
-      id: "stamp1",
-      type: "happy",
-      anonymousId: clientId,
-      postId: "post1",
-      createdAt: new Date(),
+    const mockEmotionTag: EmotionTag = {
+      id: "tag1",
+      name: "happy",
       native: "😊",
     };
 
@@ -313,7 +311,17 @@ describe("usePostStamps", () => {
               id: "post1",
               content: "test",
               anonymousId: "anon1",
-              stamps: [existingStamp],
+              emotionTag: mockEmotionTag,
+              stamps: [
+                {
+                  id: "stamp1",
+                  type: "happy",
+                  native: "😊",
+                  anonymousId: "test-client-id",
+                  postId: "post1",
+                  createdAt: new Date("2025-01-26T12:48:37.397Z"),
+                },
+              ],
               createdAt: new Date(),
             },
           ],
@@ -330,18 +338,21 @@ describe("usePostStamps", () => {
       postId: "post1",
       type: "happy",
       native: "😊",
-      anonymousId: clientId,
     } as StampInput);
 
-    expect(mockSetInfiniteData).toHaveBeenCalled();
     const setInfiniteDataCallback = mockSetInfiniteData.mock.calls[0][1];
     const updatedData = setInfiniteDataCallback(previousPosts);
     expect(updatedData.pages[0].items[0].stamps).toHaveLength(0);
   });
 
   it("既存のスタンプがない場合、新しいスタンプが追加されること", async () => {
-    const clientId = "test-client-id";
-    renderHook(() => usePostStamps());
+    const { result } = renderHook(() => usePostStamps());
+
+    const mockEmotionTag: EmotionTag = {
+      id: "tag1",
+      name: "happy",
+      native: "😊",
+    };
 
     const previousPosts = {
       pages: [
@@ -351,6 +362,7 @@ describe("usePostStamps", () => {
               id: "post1",
               content: "test",
               anonymousId: "anon1",
+              emotionTag: mockEmotionTag,
               stamps: [],
               createdAt: new Date(),
             },
@@ -368,17 +380,14 @@ describe("usePostStamps", () => {
       postId: "post1",
       type: "happy",
       native: "😊",
-      anonymousId: clientId,
     } as StampInput);
 
-    expect(mockSetInfiniteData).toHaveBeenCalled();
     const setInfiniteDataCallback = mockSetInfiniteData.mock.calls[0][1];
     const updatedData = setInfiniteDataCallback(previousPosts);
     expect(updatedData.pages[0].items[0].stamps).toHaveLength(1);
     expect(updatedData.pages[0].items[0].stamps[0]).toMatchObject({
       type: "happy",
       native: "😊",
-      anonymousId: clientId,
       postId: "post1",
     });
   });

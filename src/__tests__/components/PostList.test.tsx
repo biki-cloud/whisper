@@ -187,7 +187,6 @@ describe("PostList", () => {
       postId: "1",
       type: "😊",
       native: "😊",
-      anonymousId: "anonymous-1",
     });
   });
 
