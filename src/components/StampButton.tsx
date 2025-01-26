@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import type { Stamp } from "~/types/stamps";
 
@@ -34,7 +35,7 @@ function getStampNative(stamps: Stamp[], type: string): string {
   return stamp?.native ?? type;
 }
 
-export function StampButton({
+export const StampButton = memo(function StampButton({
   type,
   postId,
   stamps,
@@ -42,14 +43,21 @@ export function StampButton({
   onStampClick,
   showCount = true,
 }: StampButtonProps) {
-  const isActive = isStampActive(stamps, type, clientId);
-  const count = getStampCount(stamps, type);
-  const native = getStampNative(stamps, type);
+  const isActive = useMemo(
+    () => isStampActive(stamps, type, clientId),
+    [stamps, type, clientId],
+  );
+  const count = useMemo(() => getStampCount(stamps, type), [stamps, type]);
+  const native = useMemo(() => getStampNative(stamps, type), [stamps, type]);
+
+  const handleClick = useCallback(() => {
+    onStampClick(postId, type);
+  }, [onStampClick, postId, type]);
 
   return (
     <motion.button
       whileTap={{ scale: 0.95 }}
-      onClick={() => onStampClick(postId, type)}
+      onClick={handleClick}
       className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs transition-all duration-200 ${
         isActive
           ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
@@ -68,4 +76,4 @@ export function StampButton({
       )}
     </motion.button>
   );
-}
+});
