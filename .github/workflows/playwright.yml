@@ -31,12 +31,16 @@ jobs:
       - name: Get branch name
         id: branch-name
         uses: tj-actions/branch-names@v7
+      - name: Create branch directory
+        run: |
+          mkdir -p githubactions/playwright/${{ steps.branch-name.outputs.current_branch }}
+          cp -r playwright-report/* githubactions/playwright/${{ steps.branch-name.outputs.current_branch }}/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report-${{ steps.branch-name.outputs.current_branch }}
-          path: playwright-report/
+          path: githubactions/playwright/${{ steps.branch-name.outputs.current_branch }}
           retention-days: 30
 
   deploy:
@@ -56,7 +60,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: playwright-report-${{ steps.branch-name.outputs.current_branch }}
-          path: playwright-report
+          path: githubactions/playwright/${{ steps.branch-name.outputs.current_branch }}
       - name: Setup Pages
         uses: actions/configure-pages@v4
         with:
@@ -64,7 +68,7 @@ jobs:
       - name: Upload to Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: playwright-report
+          path: githubactions
           name: report-${{ steps.branch-name.outputs.current_branch }}
       - name: Deploy to GitHub Pages
         id: deployment
