@@ -62,7 +62,7 @@ if (env.NODE_ENV !== "production") {
   db.$on("query", (e) => {
     // e.queryが"COMMIT, BEGIN, "DEALLOCATE ALL"のような場合はログに出力しない
     if (!/^(COMMIT|BEGIN|DEALLOCATE ALL|SELECT 1)/.test(e.query)) {
-      logger.info("Query: " + bindParamsToQuery(e.query, e.params));
+      logger.info(bindParamsToQuery(e.query, e.params));
     }
   });
 }
