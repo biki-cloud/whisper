@@ -29,10 +29,13 @@
     "db:dev:studio": "prisma studio",
     "db:dev:reset": "prisma migrate reset --force",
     "db:dev:seed": "prisma db seed",
+    "db:dev:seed:required": "SEED_TYPE=required prisma db seed",
+    "db:dev:seed:samples": "SEED_TYPE=samples prisma db seed",
     "db:prd:generate": "dotenv -e .env.prd -- prisma migrate dev",
     "db:prd:push": "dotenv -e .env.prd -- prisma db push",
     "db:prd:studio": "dotenv -e .env.prd -- prisma studio",
-    "db:prd:seed": "dotenv -e .env.prd -- prisma db seed"
+    "db:prd:seed": "dotenv -e .env.prd -- prisma db seed",
+    "db:prd:seed:required": "SEED_TYPE=required NODE_ENV=production prisma db seed"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
