@@ -2,10 +2,10 @@ import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { api } from "~/utils/api";
-import { type PropsWithChildren } from "react";
 import { EMOTION_TAGS } from "~/constants/emotions";
 import { createTRPCReact } from "@trpc/react-query";
 import { type AppRouter } from "~/server/api/root";
+import superjson from "superjson";
 
 const mockTrpc = createTRPCReact<AppRouter>();
 
@@ -51,10 +51,7 @@ const trpcClient = mockTrpc.createClient({
   links: [
     httpBatchLink({
       url: "http://localhost:3000/api/trpc",
-      transformer: {
-        input: <T,>(data: T) => data,
-        output: <T,>(data: T) => data,
-      },
+      transformer: superjson,
     }),
   ],
 });
