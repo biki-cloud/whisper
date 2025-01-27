@@ -4,6 +4,8 @@ import { httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import { type AppRouter } from "~/server/api/root";
 import { EMOTION_TAGS } from "~/constants/emotions";
+import superjson from "superjson";
+import { type PropsWithChildren } from "react";
 
 const mockTrpc = createTRPCReact<AppRouter>();
 
@@ -50,10 +52,7 @@ const trpcClient = mockTrpc.createClient({
   links: [
     httpBatchLink({
       url: "http://localhost:3000/api/trpc",
-      transformer: {
-        input: <T,>(data: T) => data,
-        output: <T,>(data: T) => data,
-      },
+      transformer: superjson,
     }),
   ],
 });
@@ -66,8 +65,10 @@ export function renderWithProviders(ui: React.ReactElement) {
   );
 }
 
-export function withTRPC<T extends React.ComponentType<any>>(Component: T): T {
-  return function WrappedComponent(props: React.ComponentProps<T>) {
+export function withTRPC<P extends PropsWithChildren<object>>(
+  Component: React.ComponentType<P>,
+): React.ComponentType<P> {
+  return function WrappedComponent(props: P) {
     return (
       <mockTrpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
@@ -75,7 +76,7 @@ export function withTRPC<T extends React.ComponentType<any>>(Component: T): T {
         </QueryClientProvider>
       </mockTrpc.Provider>
     );
-  } as T;
+  } as React.ComponentType<P>;
 }
 
 export * from "@testing-library/react";
