@@ -1,8 +1,8 @@
 name: Playwright Tests
 on:
-  push:
-    branches:
-      - "**" # すべてのブランチでプッシュ時に実行
+  # push:
+  #   branches:
+  #     - "**" # すべてのブランチでプッシュ時に実行
   pull_request:
     branches:
       - "**" # すべてのブランチへのプルリクエスト時に実行
@@ -10,6 +10,10 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,9 +25,12 @@ jobs:
         run: pnpm exec playwright install --with-deps
       - name: Run Playwright tests
         run: pnpm exec playwright test
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
+          path: playwright-report
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
