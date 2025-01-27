@@ -35,7 +35,11 @@
     "db:prd:push": "dotenv -e .env.prd -- prisma db push",
     "db:prd:studio": "dotenv -e .env.prd -- prisma studio",
     "db:prd:seed": "dotenv -e .env.prd -- prisma db seed",
-    "db:prd:seed:required": "SEED_TYPE=required NODE_ENV=production prisma db seed"
+    "db:prd:seed:required": "SEED_TYPE=required NODE_ENV=production prisma db seed",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:codegen": "playwright codegen"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -63,9 +67,9 @@
     "lucide-react": "^0.474.0",
     "next": "13.5.8",
     "next-pwa": "5.6.0",
-    "react": "^18.3.1",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
+    "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "server-only": "^0.0.1",
     "superjson": "^2.2.1",
@@ -75,6 +79,7 @@
     "zod": "^3.23.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.50.0",
     "@swc/jest": "^0.2.37",
     "@tailwindcss/forms": "^0.5.10",
     "@testing-library/jest-dom": "^6.6.3",
