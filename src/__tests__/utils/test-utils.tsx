@@ -4,6 +4,10 @@ import { httpBatchLink } from "@trpc/client";
 import { api } from "~/utils/api";
 import { type PropsWithChildren } from "react";
 import { EMOTION_TAGS } from "~/constants/emotions";
+import { createTRPCReact } from "@trpc/react-query";
+import { type AppRouter } from "~/server/api/root";
+
+const mockTrpc = createTRPCReact<AppRouter>();
 
 jest.mock("~/utils/api", () => ({
   api: {
@@ -21,7 +25,15 @@ jest.mock("~/utils/api", () => ({
     },
     emotionTag: {
       getAll: {
-        useQuery: jest.fn(),
+        useQuery: jest.fn().mockReturnValue({
+          data: EMOTION_TAGS.map((tag, index) => ({
+            id: String(index + 1),
+            name: tag.name,
+            emoji: tag.emoji,
+          })),
+          isLoading: false,
+          error: null,
+        }),
       },
     },
   },
@@ -35,6 +47,18 @@ const queryClient = new QueryClient({
   },
 });
 
+const trpcClient = mockTrpc.createClient({
+  links: [
+    httpBatchLink({
+      url: "http://localhost:3000/api/trpc",
+      transformer: {
+        input: <T,>(data: T) => data,
+        output: <T,>(data: T) => data,
+      },
+    }),
+  ],
+});
+
 const mockEmotionTags = EMOTION_TAGS.map((tag, index) => ({
   id: String(index + 1),
   name: tag.name,
@@ -43,16 +67,20 @@ const mockEmotionTags = EMOTION_TAGS.map((tag, index) => ({
 
 export function renderWithProviders(ui: React.ReactElement) {
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+    <mockTrpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    </mockTrpc.Provider>,
   );
 }
 
 export function withTRPC<T extends React.ComponentType<any>>(Component: T): T {
   return function WrappedComponent(props: React.ComponentProps<T>) {
     return (
-      <QueryClientProvider client={queryClient}>
-        <Component {...props} />
-      </QueryClientProvider>
+      <mockTrpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          <Component {...props} />
+        </QueryClientProvider>
+      </mockTrpc.Provider>
     );
   } as T;
 }
