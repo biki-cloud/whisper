@@ -29,6 +29,15 @@ jobs:
         if: ${{ github.event.deployment_status.environment == 'Preview' }}
         run: |
           echo "BASE_URL=https://vent-git-${{ env.BRANCH_NAME }}-biki-clouds-projects.vercel.app" >> $GITHUB_ENV
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
       - name: Install dependencies
         run: pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps
       - name: Run tests
