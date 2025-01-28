@@ -1,0 +1,37 @@
+name: Playwright Tests
+
+on:
+  deployment_status:
+  # pull_request:
+
+jobs:
+  run-e2es:
+    if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: "${{ github.event.deployment_status.deployment.ref }}"
+      - name: Get branch name
+        run: |
+          echo "BRANCH_NAME=$(git show -s --pretty=%D HEAD | tr -s ',' '\n' | sed 's/^ //' | grep -e 'origin/' | head -1 | sed 's/\origin\///g')" >> $GITHUB_ENV
+        env:
+          ENVIRONMENT_URL: ${{ github.event.deployment_status.environment_url }}
+          URL2: ${{ github.event.deployment_status.target_url }}
+          ENV2: ${{ github.event.deployment_status.environment }}
+          ENV3: ${{ github.event.deployment_status.deployment.ref }}
+      - name: Set BASE_URL for production
+        if: ${{ github.event.deployment_status.environment == 'Production' }}
+        run: echo "BASE_URL=https://vent-beryl.vercel.app" >> $GITHUB_ENV
+      - name: Set BASE_URL for preview
+        if: ${{ github.event.deployment_status.environment == 'Preview' }}
+        run: |
+          echo "BASE_URL=https://vent-git-${{ env.BRANCH_NAME }}-biki-clouds-projects.vercel.app" >> $GITHUB_ENV
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps
+      - name: Run tests
+        run: pnpm exec playwright test
+        env:
+          BASE_URL: ${{ env.BASE_URL }}
