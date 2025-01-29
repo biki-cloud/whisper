@@ -2,7 +2,11 @@ name: Playwright Tests
 
 on:
   deployment_status:
-  # pull_request:
+
+# ${{ github.event.deployment_status.target_url }}: vercelでブランチごとの動的に生成されるURL
+# ${{ github.event.deployment_status.environment_url }}: vercelでブランチごとの動的に生成されるURL
+# ${{ github.event.deployment_status.environment }}: Production or Preview or Development
+# https://vent-git-${{ env.BRANCH_NAME }}-biki-clouds-projects.vercel.app: ブランチのデプロイURL
 
 jobs:
   run-playwright-tests:
@@ -17,20 +21,13 @@ jobs:
       - name: Get branch name
         run: |
           echo "BRANCH_NAME=$(git show -s --pretty=%D HEAD | tr -s ',' '\n' | sed 's/^ //' | grep -e 'origin/' | head -1 | sed 's/\origin\///g')" >> $GITHUB_ENV
-        env:
-          ENVIRONMENT_URL: ${{ github.event.deployment_status.environment_url }}
-          URL2: ${{ github.event.deployment_status.target_url }}
-          ENV2: ${{ github.event.deployment_status.environment }}
-          ENV3: ${{ github.event.deployment_status.deployment.ref }}
       - name: Set BASE_URL
         run: |
-          # branch deploy url: https://vent-git-${{ env.BRANCH_NAME }}-biki-clouds-projects.vercel.app
           if [ "${{ github.event.deployment_status.environment }}" = "Production" ]; then
             echo "BASE_URL=https://vent-beryl.vercel.app" >> $GITHUB_ENV
           else
             echo "BASE_URL=${{ github.event.deployment_status.target_url }}" >> $GITHUB_ENV
           fi
-          echo selected BASE_URL: ${{ env.BASE_URL }}
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
