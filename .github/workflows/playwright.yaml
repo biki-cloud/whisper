@@ -45,3 +45,12 @@ jobs:
         run: pnpm exec playwright test
         env:
           BASE_URL: ${{ env.BASE_URL }}
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
