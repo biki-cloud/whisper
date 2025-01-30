@@ -31,6 +31,8 @@ jobs:
         run: pnpm install
       - name: Run Unit Tests
         run: pnpm test:coverage
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -82,7 +84,7 @@ jobs:
         run: pnpm exec playwright test
         env:
           NODE_ENV: development
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
           BASE_URL: ${{ needs.Deploy-Preview.outputs.preview-url }}
       - uses: actions/upload-artifact@v4
         if: always()
