@@ -30,7 +30,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Run Unit Tests
-        run: pnpm test:coverage
+        run: |
+          pnpm test:coverage
+          echo "COVERAGE_SUMMARY=$(cat coverage/coverage-summary.json | jq -r tostring)" >> $GITHUB_ENV
         env:
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
       - uses: actions/upload-artifact@v4
@@ -79,6 +81,23 @@ jobs:
           message: |
             🚀 プレビューデプロイが完了しました！ -> ${{ needs.Deploy-Preview.outputs.preview-url }}
           comment_tag: preview-deployment
+          mode: recreate
+
+  Comment-Coverage:
+    needs: Unit-Test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment Coverage Report
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            ## 📊 テストカバレッジレポート
+
+            ```json
+            ${{ fromJson(env.COVERAGE_SUMMARY) }}
+            ```
+          comment_tag: coverage-report
           mode: recreate
 
   E2E-Test:
