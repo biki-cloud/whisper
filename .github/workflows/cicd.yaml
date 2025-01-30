@@ -30,11 +30,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Run Unit Tests
-        run: |
-          pnpm test:coverage
-          echo "COVERAGE_SUMMARY=$(cat coverage/coverage-summary.json | jq -r tostring)" >> $GITHUB_ENV
+        run: pnpm test:coverage
         env:
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+      - name: Save coverage summary
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p ./coverage-summary
+          cat coverage/coverage-summary.json > ./coverage-summary/summary.json
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'pull_request'
+        with:
+          name: coverage-summary
+          path: coverage-summary/
+          retention-days: 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -88,6 +97,14 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-summary
+          path: coverage-summary
+      - name: Read coverage summary
+        id: coverage
+        run: |
+          echo "summary=$(cat coverage-summary/summary.json)" >> $GITHUB_OUTPUT
       - name: Comment Coverage Report
         uses: thollander/actions-comment-pull-request@v2
         with:
@@ -95,7 +112,7 @@ jobs:
             ## 📊 テストカバレッジレポート
 
             ```json
-            ${{ fromJson(env.COVERAGE_SUMMARY) }}
+            ${{ steps.coverage.outputs.summary }}
             ```
           comment_tag: coverage-report
           mode: recreate
