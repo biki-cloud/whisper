@@ -73,6 +73,17 @@ const config: Config = {
   },
   extensionsToTreatAsEsm: [".ts", ".tsx"],
   resolver: undefined,
+  collectCoverage: true,
+  coverageDirectory: "coverage",
+  coverageReporters: ["json", "lcov", "text", "json-summary"],
+  collectCoverageFrom: [
+    "src/**/*.{js,jsx,ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/**/*.stories.{js,jsx,ts,tsx}",
+    "!src/**/*.test.{js,jsx,ts,tsx}",
+    "!src/**/index.{js,jsx,ts,tsx}",
+    "!src/**/_*.{js,jsx,ts,tsx}",
+  ],
 };
 
 // createJestConfigを定義することによって、本ファイルで定義された設定がNext.jsの設定に反映される

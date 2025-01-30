@@ -30,14 +30,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Run Unit Tests
-        run: pnpm test:coverage
+        run: |
+          pnpm test:coverage
+          ls -la coverage/
         env:
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
       - name: Save coverage summary
         if: github.event_name == 'pull_request'
         run: |
-          mkdir -p ./coverage-summary
-          cat coverage/coverage-summary.json > ./coverage-summary/summary.json
+          if [ -f "coverage/coverage-summary.json" ]; then
+            mkdir -p ./coverage-summary
+            cp coverage/coverage-summary.json ./coverage-summary/summary.json
+          else
+            echo "No coverage report found"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         if: github.event_name == 'pull_request'
         with:
