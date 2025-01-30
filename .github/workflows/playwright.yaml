@@ -26,7 +26,8 @@ jobs:
           if [ "${{ github.event.deployment_status.environment }}" = "Production" ]; then
             echo "BASE_URL=https://vent-beryl.vercel.app" >> $GITHUB_ENV
           else
-            echo "BASE_URL=${{ github.event.deployment_status.target_url }}" >> $GITHUB_ENV
+            echo "BASE_URL=https://vent-git-${{ env.BRANCH_NAME }}-biki-clouds-projects.vercel.app"  >> $GITHUB_ENV
+            # echo "BASE_URL=${{ github.event.deployment_status.target_url }}" >> $GITHUB_ENV
           fi
       - name: Setup Node.js
         uses: actions/setup-node@v3
