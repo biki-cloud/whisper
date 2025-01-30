@@ -170,7 +170,7 @@ jobs:
         if: always()
         run: |
           mkdir -p ./playwright-summary
-          pnpm exec playwright test --reporter=json,html > ./playwright-summary/test-results.json
+          pnpm exec playwright test --reporter=html --reporter=json:./playwright-summary/test-results.json
         env:
           NODE_ENV: development
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
@@ -202,12 +202,12 @@ jobs:
         if: hashFiles('playwright-summary/test-results.json') != ''
         run: |
           RESULTS=$(cat playwright-summary/test-results.json)
-          TOTAL=$(echo "$RESULTS" | jq '.stats.total')
-          PASSED=$(echo "$RESULTS" | jq '.stats.passed')
-          FAILED=$(echo "$RESULTS" | jq '.stats.failures')
-          FLAKY=$(echo "$RESULTS" | jq '.stats.flaky')
-          SKIPPED=$(echo "$RESULTS" | jq '.stats.skipped')
-          DURATION=$(echo "$RESULTS" | jq '.stats.duration')
+          TOTAL=$(echo "$RESULTS" | jq '.totalTests')
+          PASSED=$(echo "$RESULTS" | jq '.passed')
+          FAILED=$(echo "$RESULTS" | jq '.failed')
+          FLAKY=$(echo "$RESULTS" | jq '.flaky')
+          SKIPPED=$(echo "$RESULTS" | jq '.skipped')
+          DURATION=$(echo "$RESULTS" | jq '.duration')
 
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
