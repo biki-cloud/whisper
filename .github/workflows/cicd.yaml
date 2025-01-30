@@ -119,11 +119,10 @@ jobs:
         id: format
         run: |
           SUMMARY=$(cat coverage-summary/summary.json)
-          TOTAL=$(echo "$SUMMARY" | jq -r '.total')
-          STATEMENTS=$(echo "$TOTAL.statements.pct")
-          BRANCHES=$(echo "$TOTAL.branches.pct")
-          FUNCTIONS=$(echo "$TOTAL.functions.pct")
-          LINES=$(echo "$TOTAL.lines.pct")
+          STATEMENTS=$(echo "$SUMMARY" | jq -r '.total.statements.pct')
+          BRANCHES=$(echo "$SUMMARY" | jq -r '.total.branches.pct')
+          FUNCTIONS=$(echo "$SUMMARY" | jq -r '.total.functions.pct')
+          LINES=$(echo "$SUMMARY" | jq -r '.total.lines.pct')
           echo "statements=$STATEMENTS" >> $GITHUB_OUTPUT
           echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
           echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
@@ -142,6 +141,12 @@ jobs:
             | Lines | ${{ steps.format.outputs.lines }}% |
           comment_tag: coverage-report
           mode: recreate
+      - name: Debug JSON
+        run: |
+          echo "JSON content:"
+          cat coverage-summary/summary.json
+          echo "JSON structure:"
+          jq '.' coverage-summary/summary.json
 
   E2E-Test:
     needs: Deploy-Preview
