@@ -178,3 +178,56 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
+      - name: Save test results
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          if [ -f "playwright-report/results.json" ]; then
+            mkdir -p ./playwright-summary
+            cp playwright-report/results.json ./playwright-summary/
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'pull_request'
+        with:
+          name: playwright-summary
+          path: playwright-summary/
+          retention-days: 1
+
+  Comment-Playwright:
+    needs: E2E-Test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: playwright-summary
+          path: playwright-summary
+      - name: Format test results
+        id: format
+        if: hashFiles('playwright-summary/results.json') != ''
+        run: |
+          RESULTS=$(cat playwright-summary/results.json)
+          TOTAL_TESTS=$(echo "$RESULTS" | jq '[.suites[].specs[].tests[]] | length')
+          PASSED_TESTS=$(echo "$RESULTS" | jq '[.suites[].specs[].tests[] | select(.status == "expected")] | length')
+          FAILED_TESTS=$(echo "$RESULTS" | jq '[.suites[].specs[].tests[] | select(.status == "failed")] | length')
+          SKIPPED_TESTS=$(echo "$RESULTS" | jq '[.suites[].specs[].tests[] | select(.status == "skipped")] | length')
+          echo "total=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+          echo "passed=$PASSED_TESTS" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED_TESTS" >> $GITHUB_OUTPUT
+          echo "skipped=$SKIPPED_TESTS" >> $GITHUB_OUTPUT
+      - name: Comment Playwright Results
+        uses: thollander/actions-comment-pull-request@v2
+        if: hashFiles('playwright-summary/results.json') != ''
+        with:
+          message: |
+            ## 🎭 Playwright E2Eテスト結果
+
+            | 項目 | 件数 |
+            |------|------|
+            | 総テスト数 | ${{ steps.format.outputs.total }} |
+            | 成功 ✅ | ${{ steps.format.outputs.passed }} |
+            | 失敗 ❌ | ${{ steps.format.outputs.failed }} |
+            | スキップ ⏭️ | ${{ steps.format.outputs.skipped }} |
+
+            詳細なレポートは Artifacts の `playwright-report` で確認できます。
+          comment_tag: playwright-report
+          mode: recreate
