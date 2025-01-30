@@ -170,11 +170,14 @@ jobs:
         if: always()
         run: |
           mkdir -p ./playwright-summary
-          pnpm exec playwright test --reporter=html --reporter=json:./playwright-summary/test-results.json
+          pnpm exec playwright test --reporter=list --reporter=json > ./playwright-summary/test-results.json
         env:
           NODE_ENV: development
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
           BASE_URL: ${{ needs.Deploy-Preview.outputs.preview-url }}
+      - name: Generate HTML report
+        if: always()
+        run: pnpm exec playwright show-report
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -202,12 +205,13 @@ jobs:
         if: hashFiles('playwright-summary/test-results.json') != ''
         run: |
           RESULTS=$(cat playwright-summary/test-results.json)
-          TOTAL=$(echo "$RESULTS" | jq '.totalTests')
-          PASSED=$(echo "$RESULTS" | jq '.passed')
-          FAILED=$(echo "$RESULTS" | jq '.failed')
-          FLAKY=$(echo "$RESULTS" | jq '.flaky')
-          SKIPPED=$(echo "$RESULTS" | jq '.skipped')
-          DURATION=$(echo "$RESULTS" | jq '.duration')
+          # 新しいJSONフォーマットに合わせて解析方法を変更
+          TOTAL=$(echo "$RESULTS" | jq '[.suites[].specs[].tests[]] | length')
+          PASSED=$(echo "$RESULTS" | jq '[.suites[].specs[].tests[] | select(.status == "expected")] | length')
+          FAILED=$(echo "$RESULTS" | jq '[.suites[].specs[].tests[] | select(.status == "unexpected")] | length')
+          FLAKY=$(echo "$RESULTS" | jq '[.suites[].specs[].tests[] | select(.status == "flaky")] | length')
+          SKIPPED=$(echo "$RESULTS" | jq '[.suites[].specs[].tests[] | select(.status == "skipped")] | length')
+          DURATION=$(echo "$RESULTS" | jq '.stats.duration // 0')
 
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
           echo "passed=$PASSED" >> $GITHUB_OUTPUT
