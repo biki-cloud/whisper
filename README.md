@@ -240,4 +240,4 @@ pnpm prisma migrate reset --force --skip-seed --env-file .env.prd
 
 TODO
 
-- 投稿しようとした時にエラーが出る。emotionTagあたりのエラーの模様。seed.tsでemotionTagが２重に入っている。
+- github actionsでデプロイしたvercelの動的urlにplaywrightを動作させてテストしたい
