@@ -1,4 +1,4 @@
-name: unittest/deploy-preview/e2e-test
+name: CI/CD
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -36,7 +36,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: jesr-coverage-report
+          name: jest-coverage-report
           path: coverage/
           retention-days: 30
 
