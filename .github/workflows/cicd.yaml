@@ -68,6 +68,24 @@ jobs:
     outputs:
       preview-url: ${{ steps.preview.outputs.url }}
 
+  Comment-PR:
+    needs: Deploy-Preview
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            🚀 プレビューデプロイが完了しました！
+
+            デプロイURL: ${{ needs.Deploy-Preview.outputs.preview-url }}
+
+            以下のURLで確認できます：
+            - ✨ [プレビューを確認](${{ needs.Deploy-Preview.outputs.preview-url }})
+          comment_tag: preview-deployment
+          mode: recreate
+
   E2E-Test:
     needs: Deploy-Preview
     runs-on: ubuntu-latest
