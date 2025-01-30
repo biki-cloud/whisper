@@ -167,17 +167,14 @@ jobs:
       - name: Install dependencies
         run: pnpm exec playwright install --with-deps
       - name: Run tests
-        run: pnpm exec playwright test
+        if: always()
+        run: |
+          mkdir -p ./playwright-summary
+          pnpm exec playwright test --reporter=json,html > ./playwright-summary/test-results.json
         env:
           NODE_ENV: development
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
           BASE_URL: ${{ needs.Deploy-Preview.outputs.preview-url }}
-      # テスト結果をJSONとして出力
-      - name: Generate test results
-        if: always()
-        run: |
-          mkdir -p ./playwright-summary
-          pnpm exec playwright show-report --reporter json > ./playwright-summary/test-results.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
