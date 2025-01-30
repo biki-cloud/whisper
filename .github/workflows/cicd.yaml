@@ -111,16 +111,35 @@ jobs:
       - name: Read coverage summary
         id: coverage
         run: |
-          echo "summary=$(cat coverage-summary/summary.json)" >> $GITHUB_OUTPUT
+          SUMMARY=$(cat coverage-summary/summary.json)
+          # JSONをエスケープして1行に整形
+          ESCAPED_SUMMARY=$(echo "$SUMMARY" | jq -c '.' | sed 's/"/\\"/g')
+          echo "summary=$ESCAPED_SUMMARY" >> $GITHUB_OUTPUT
+      - name: Format coverage report
+        id: format
+        run: |
+          SUMMARY=$(cat coverage-summary/summary.json)
+          TOTAL=$(echo "$SUMMARY" | jq -r '.total')
+          STATEMENTS=$(echo "$TOTAL.statements.pct")
+          BRANCHES=$(echo "$TOTAL.branches.pct")
+          FUNCTIONS=$(echo "$TOTAL.functions.pct")
+          LINES=$(echo "$TOTAL.lines.pct")
+          echo "statements=$STATEMENTS" >> $GITHUB_OUTPUT
+          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+          echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
+          echo "lines=$LINES" >> $GITHUB_OUTPUT
       - name: Comment Coverage Report
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
             ## 📊 テストカバレッジレポート
 
-            ```json
-            ${{ steps.coverage.outputs.summary }}
-            ```
+            | 項目 | カバレッジ |
+            |------|------------|
+            | Statements | ${{ steps.format.outputs.statements }}% |
+            | Branches | ${{ steps.format.outputs.branches }}% |
+            | Functions | ${{ steps.format.outputs.functions }}% |
+            | Lines | ${{ steps.format.outputs.lines }}% |
           comment_tag: coverage-report
           mode: recreate
 
