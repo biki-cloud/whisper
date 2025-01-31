@@ -23,7 +23,7 @@ export function EmotionSelect({
 
   return (
     <Select value={selectedId} onValueChange={onSelect} disabled={disabled}>
-      <SelectTrigger className="w-full">
+      <SelectTrigger className="w-full" aria-label="感情を選択してください">
         <SelectValue placeholder="感情を選択してください" />
       </SelectTrigger>
       <SelectContent>
