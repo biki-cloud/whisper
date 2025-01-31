@@ -175,7 +175,6 @@ jobs:
           NODE_ENV: development
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
           BASE_URL: ${{ needs.Deploy-Preview.outputs.preview-url }}
-          PLAYWRIGHT_JSON_OUTPUT_NAME: ./playwright-summary/test-results.json
       - name: Generate HTML report
         if: always()
         run: pnpm exec playwright show-report
