@@ -168,9 +168,7 @@ jobs:
         run: pnpm exec playwright install --with-deps
       - name: Run tests
         if: always()
-        run: |
-          mkdir -p ./playwright-summary
-          pnpm exec playwright test --reporter=dot,json
+        run: pnpm exec playwright test
         env:
           NODE_ENV: development
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
