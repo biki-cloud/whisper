@@ -86,7 +86,7 @@ jobs:
     outputs:
       preview-url: ${{ steps.preview.outputs.url }}
 
-  Comment-PR:
+  Comment-Deploy-Preview-URL:
     needs: Deploy-Preview
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
