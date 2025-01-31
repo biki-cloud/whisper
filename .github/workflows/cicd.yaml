@@ -99,54 +99,54 @@ jobs:
           comment_tag: preview-deployment
           mode: recreate
 
-  Comment-Coverage:
-    needs: Unit-Test
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: coverage-summary
-          path: coverage-summary
-      - name: Read coverage summary
-        id: coverage
-        run: |
-          SUMMARY=$(cat coverage-summary/summary.json)
-          # JSONをエスケープして1行に整形
-          ESCAPED_SUMMARY=$(echo "$SUMMARY" | jq -c '.' | sed 's/"/\\"/g')
-          echo "summary=$ESCAPED_SUMMARY" >> $GITHUB_OUTPUT
-      - name: Format coverage report
-        id: format
-        run: |
-          SUMMARY=$(cat coverage-summary/summary.json)
-          STATEMENTS=$(echo "$SUMMARY" | jq -r '.total.statements.pct')
-          BRANCHES=$(echo "$SUMMARY" | jq -r '.total.branches.pct')
-          FUNCTIONS=$(echo "$SUMMARY" | jq -r '.total.functions.pct')
-          LINES=$(echo "$SUMMARY" | jq -r '.total.lines.pct')
-          echo "statements=$STATEMENTS" >> $GITHUB_OUTPUT
-          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
-          echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
-          echo "lines=$LINES" >> $GITHUB_OUTPUT
-      - name: Comment Coverage Report
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            ## 📊 テストカバレッジレポート
+  # Comment-Coverage:
+  #   needs: Unit-Test
+  #   if: github.event_name == 'pull_request'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: coverage-summary
+  #         path: coverage-summary
+  #     - name: Read coverage summary
+  #       id: coverage
+  #       run: |
+  #         SUMMARY=$(cat coverage-summary/summary.json)
+  #         # JSONをエスケープして1行に整形
+  #         ESCAPED_SUMMARY=$(echo "$SUMMARY" | jq -c '.' | sed 's/"/\\"/g')
+  #         echo "summary=$ESCAPED_SUMMARY" >> $GITHUB_OUTPUT
+  #     - name: Format coverage report
+  #       id: format
+  #       run: |
+  #         SUMMARY=$(cat coverage-summary/summary.json)
+  #         STATEMENTS=$(echo "$SUMMARY" | jq -r '.total.statements.pct')
+  #         BRANCHES=$(echo "$SUMMARY" | jq -r '.total.branches.pct')
+  #         FUNCTIONS=$(echo "$SUMMARY" | jq -r '.total.functions.pct')
+  #         LINES=$(echo "$SUMMARY" | jq -r '.total.lines.pct')
+  #         echo "statements=$STATEMENTS" >> $GITHUB_OUTPUT
+  #         echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+  #         echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
+  #         echo "lines=$LINES" >> $GITHUB_OUTPUT
+  # - name: Comment Coverage Report
+  #   uses: thollander/actions-comment-pull-request@v2
+  #   with:
+  #     message: |
+  #       ## 📊 テストカバレッジレポート
 
-            | 項目 | カバレッジ |
-            |------|------------|
-            | Statements | ${{ steps.format.outputs.statements }}% |
-            | Branches | ${{ steps.format.outputs.branches }}% |
-            | Functions | ${{ steps.format.outputs.functions }}% |
-            | Lines | ${{ steps.format.outputs.lines }}% |
-          comment_tag: coverage-report
-          mode: recreate
-      - name: Debug JSON
-        run: |
-          echo "JSON content:"
-          cat coverage-summary/summary.json
-          echo "JSON structure:"
-          jq '.' coverage-summary/summary.json
+  #       | 項目 | カバレッジ |
+  #       |------|------------|
+  #       | Statements | ${{ steps.format.outputs.statements }}% |
+  #       | Branches | ${{ steps.format.outputs.branches }}% |
+  #       | Functions | ${{ steps.format.outputs.functions }}% |
+  #       | Lines | ${{ steps.format.outputs.lines }}% |
+  #     comment_tag: coverage-report
+  #     mode: recreate
+  # - name: Debug JSON
+  #   run: |
+  #     echo "JSON content:"
+  #     cat coverage-summary/summary.json
+  #     echo "JSON structure:"
+  #     jq '.' coverage-summary/summary.json
 
   E2E-Test:
     needs: Deploy-Preview
@@ -191,58 +191,3 @@ jobs:
           name: playwright-summary
           path: playwright-summary/
           retention-days: 1
-
-  Comment-Playwright:
-    needs: E2E-Test
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: playwright-summary
-          path: playwright-summary
-      - name: Format test results
-        id: format
-        if: hashFiles('playwright-summary/test-results.json') != ''
-        run: |
-          if [ ! -f "playwright-summary/test-results.json" ]; then
-            echo "No test results found"
-            exit 0
-          fi
-
-          RESULTS=$(cat playwright-summary/test-results.json)
-
-          # シンプルな集計方法に変更
-          TOTAL=$(echo "$RESULTS" | jq '.stats.total')
-          PASSED=$(echo "$RESULTS" | jq '.stats.expected')
-          FAILED=$(echo "$RESULTS" | jq '.stats.unexpected')
-          FLAKY=$(echo "$RESULTS" | jq '.stats.flaky')
-          SKIPPED=$(echo "$RESULTS" | jq '.stats.skipped')
-          DURATION=$(echo "$RESULTS" | jq '.stats.duration')
-
-          # 値が null の場合は 0 を設定
-          echo "total=${TOTAL:-0}" >> $GITHUB_OUTPUT
-          echo "passed=${PASSED:-0}" >> $GITHUB_OUTPUT
-          echo "failed=${FAILED:-0}" >> $GITHUB_OUTPUT
-          echo "flaky=${FLAKY:-0}" >> $GITHUB_OUTPUT
-          echo "skipped=${SKIPPED:-0}" >> $GITHUB_OUTPUT
-          echo "duration=${DURATION:-0}" >> $GITHUB_OUTPUT
-      - name: Comment Playwright Results
-        uses: thollander/actions-comment-pull-request@v2
-        if: hashFiles('playwright-summary/test-results.json') != ''
-        with:
-          message: |
-            ## 🎭 Playwright E2Eテスト結果
-
-            | 項目 | 件数 |
-            |------|------|
-            | 総テスト数 | ${{ steps.format.outputs.total }} |
-            | 成功 ✅ | ${{ steps.format.outputs.passed }} |
-            | 失敗 ❌ | ${{ steps.format.outputs.failed }} |
-            | Flaky 🔄 | ${{ steps.format.outputs.flaky }} |
-            | スキップ ⏭️ | ${{ steps.format.outputs.skipped }} |
-            | 実行時間 ⏱️ | ${{ steps.format.outputs.duration }}ms |
-
-            詳細なレポートは Artifacts の `playwright-report` で確認できます。
-          comment_tag: playwright-report
-          mode: recreate
