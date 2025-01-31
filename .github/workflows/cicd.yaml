@@ -175,18 +175,9 @@ jobs:
           NODE_ENV: development
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
           BASE_URL: ${{ needs.Deploy-Preview.outputs.preview-url }}
-      - name: Generate HTML report
-        if: always()
-        run: pnpm exec playwright show-report
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
-      - uses: actions/upload-artifact@v4
-        if: always() && github.event_name == 'pull_request'
-        with:
-          name: playwright-summary
-          path: playwright-summary/
-          retention-days: 1
