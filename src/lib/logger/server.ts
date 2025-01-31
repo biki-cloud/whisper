@@ -5,10 +5,19 @@ export function getLogger(component: string) {
   if (process.env.NODE_ENV === "test") {
     const logger = pino({
       level: "silent",
+    });
+    return logger.child({ component });
+  }
+
+  // 開発環境では pino-pretty を使用
+  if (process.env.NODE_ENV === "development") {
+    const logger = pino({
+      level: "debug",
       transport: {
         target: "pino-pretty",
         options: {
           colorize: true,
+          translateTime: "SYS:yyyy-mm-dd HH:MM:ss",
           ignore: "pid,hostname,component",
           messageFormat: "{component} | {msg}",
         },
@@ -17,21 +26,10 @@ export function getLogger(component: string) {
     return logger.child({ component });
   }
 
+  // 本番環境では基本的なpinoロガーを使用
   const logger = pino({
-    // ここでenv.NODE_ENVを使うとなぜかjest oss-env系のエラーになるため、直
-    // 本来はこうしたい：level: env.NODE_ENV === "production" ? "info" : "debug",
-    level: "debug",
-    transport: {
-      target: "pino-pretty",
-      options: {
-        colorize: true,
-        translateTime: "SYS:yyyy-mm-dd HH:MM:ss",
-        ignore: "pid,hostname,component",
-        messageFormat: "{component} | {msg}",
-      },
-    },
+    level: "info",
     timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"`,
   });
-  const child = logger.child({ component: component });
-  return child;
+  return logger.child({ component });
 }
