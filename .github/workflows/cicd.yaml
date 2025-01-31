@@ -99,6 +99,7 @@ jobs:
           comment_tag: preview-deployment
           mode: recreate
 
+  # jestのカバレッジレポートをプルリクエストにコメントする
   # Comment-Coverage:
   #   needs: Unit-Test
   #   if: github.event_name == 'pull_request'
