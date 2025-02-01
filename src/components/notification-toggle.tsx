@@ -5,6 +5,8 @@ import { Button } from "~/components/ui/button";
 import { useToast } from "~/hooks/use-toast";
 import { Bell, BellOff } from "lucide-react";
 
+const NOTIFICATION_STORAGE_KEY = "notification-status";
+
 export function NotificationToggle() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,8 +25,17 @@ export function NotificationToggle() {
           return;
         }
 
+        // localStorageから状態を読み込む
+        const storedStatus = localStorage.getItem(NOTIFICATION_STORAGE_KEY);
         const permission = Notification.permission;
-        setIsSubscribed(permission === "granted");
+
+        // localStorageに保存された値がある場合はそれを使用し、
+        // ない場合は現在のブラウザの許可状態を使用
+        const isNotificationEnabled = storedStatus
+          ? storedStatus === "true"
+          : permission === "granted";
+
+        setIsSubscribed(isNotificationEnabled);
         setIsLoading(false);
       } catch (error) {
         console.error("通知の権限確認中にエラーが発生しました:", error);
@@ -62,6 +73,7 @@ export function NotificationToggle() {
       if (isSubscribed) {
         // 通知をオフにする処理
         setIsSubscribed(false);
+        localStorage.setItem(NOTIFICATION_STORAGE_KEY, "false");
         toast({
           title: "通知をオフにしました",
           description: "新着の投稿通知は届きません",
@@ -71,6 +83,7 @@ export function NotificationToggle() {
         const permission = await Notification.requestPermission();
         if (permission === "granted") {
           setIsSubscribed(true);
+          localStorage.setItem(NOTIFICATION_STORAGE_KEY, "true");
           toast({
             title: "通知をオンにしました",
             description: "新着の投稿通知が届くようになりました",
