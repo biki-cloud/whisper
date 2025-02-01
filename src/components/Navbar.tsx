@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "~/lib/utils";
 import { motion } from "framer-motion";
 import { Home, MessageCircle, PenSquare, Wind } from "lucide-react";
+import { NotificationToggle } from "./notification-toggle";
 
 const navigation = [
   { name: "ホーム", href: "/", icon: Home },
@@ -62,6 +63,9 @@ export function Navbar() {
                 </Link>
               );
             })}
+            <div className="hidden md:block">
+              <NotificationToggle />
+            </div>
           </div>
         </div>
       </div>

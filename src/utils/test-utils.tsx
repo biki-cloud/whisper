@@ -3,36 +3,90 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import { type AppRouter } from "~/server/api/root";
-import { EMOTION_TAGS } from "~/constants/emotions";
 import superjson from "superjson";
 import { type PropsWithChildren } from "react";
+import { type EmotionTag } from "@prisma/client";
+import { Toaster } from "~/components/ui/toaster";
 
 const mockTrpc = createTRPCReact<AppRouter>();
 
-export const api = {
-  useContext: jest.fn(() => ({
-    post: {
-      getAll: {
-        invalidate: jest.fn(),
-      },
-    },
-  })),
-  post: {
-    create: {
-      useMutation: jest.fn(() => ({
-        mutateAsync: jest.fn(),
-        isPending: false,
-      })),
+const mockTrpcClient = mockTrpc.createClient({
+  links: [
+    httpBatchLink({
+      url: "http://localhost:3000/api/trpc",
+      transformer: superjson,
+    }),
+  ],
+});
+
+export const mockEmotionTags: EmotionTag[] = [
+  {
+    id: "1",
+    name: "happy",
+  },
+  {
+    id: "2",
+    name: "sad",
+  },
+];
+
+export const mockTrpcQueries = {
+  emotionTag: {
+    list: {
+      useQuery: () => ({
+        data: mockEmotionTags,
+        isLoading: false,
+        error: null,
+      }),
     },
   },
-  emotionTag: {
-    getAll: {
-      useQuery: jest.fn().mockReturnValue({
-        data: EMOTION_TAGS.map((tag, index) => ({
-          id: String(index + 1),
-          name: tag.name,
-          emoji: tag.emoji,
-        })),
+  post: {
+    create: {
+      useMutation: () => ({
+        mutate: jest.fn(),
+        isLoading: false,
+        error: null,
+      }),
+    },
+    list: {
+      useInfiniteQuery: () => ({
+        data: {
+          pages: [],
+          pageParams: [],
+        },
+        fetchNextPage: jest.fn(),
+        hasNextPage: false,
+        isFetchingNextPage: false,
+        isLoading: false,
+        error: null,
+      }),
+    },
+    delete: {
+      useMutation: () => ({
+        mutate: jest.fn(),
+        isLoading: false,
+        error: null,
+      }),
+    },
+    getClientId: {
+      useQuery: () => ({
+        data: "test-client-id",
+        isLoading: false,
+        error: null,
+      }),
+    },
+    getAllPosts: {
+      useQuery: () => ({
+        data: [],
+        isLoading: false,
+        error: null,
+      }),
+    },
+  },
+  stamp: {
+    toggle: {
+      useMutation: () => ({
+        mutate: jest.fn(),
         isLoading: false,
         error: null,
       }),
@@ -48,20 +102,16 @@ const queryClient = new QueryClient({
   },
 });
 
-const trpcClient = mockTrpc.createClient({
-  links: [
-    httpBatchLink({
-      url: "http://localhost:3000/api/trpc",
-      transformer: superjson,
-    }),
-  ],
-});
-
 export function renderWithProviders(ui: React.ReactElement) {
   return render(
-    <mockTrpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
-    </mockTrpc.Provider>,
+    <QueryClientProvider client={queryClient}>
+      <mockTrpc.Provider client={mockTrpcClient} queryClient={queryClient}>
+        <>
+          {ui}
+          <Toaster />
+        </>
+      </mockTrpc.Provider>
+    </QueryClientProvider>,
   );
 }
 
@@ -70,16 +120,17 @@ export function withTRPC<P extends PropsWithChildren<object>>(
 ): React.ComponentType<P> {
   return function WrappedComponent(props: P) {
     return (
-      <mockTrpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          <Component {...props} />
-        </QueryClientProvider>
-      </mockTrpc.Provider>
+      <QueryClientProvider client={queryClient}>
+        <mockTrpc.Provider client={mockTrpcClient} queryClient={queryClient}>
+          <>
+            <Component {...props} />
+            <Toaster />
+          </>
+        </mockTrpc.Provider>
+      </QueryClientProvider>
     );
-  } as React.ComponentType<P>;
+  };
 }
-
-export * from "@testing-library/react";
 
 // next/navigationのモック
 jest.mock("next/navigation", () => ({
@@ -87,3 +138,5 @@ jest.mock("next/navigation", () => ({
     push: jest.fn(),
   }),
 }));
+
+export * from "@testing-library/react";
