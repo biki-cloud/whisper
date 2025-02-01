@@ -4,8 +4,6 @@ import { EMOTION_TAGS } from "~/constants/emotions";
 import { StampSelector } from "./StampSelector";
 import { DeletePostDialog } from "./DeletePostDialog";
 import type { PostWithRelations } from "~/hooks/post/usePostList";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface PostCardProps {

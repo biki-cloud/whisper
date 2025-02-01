@@ -5,9 +5,6 @@ import { Card, CardContent, CardHeader } from "./ui/card";
 import { StampSelector } from "./post/StampSelector";
 import { DeletePostDialog } from "./post/DeletePostDialog";
 import { formatDate } from "~/lib/utils";
-import { Button } from "./ui/button";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { api } from "~/utils/api";
 
 interface PostDetailProps {
