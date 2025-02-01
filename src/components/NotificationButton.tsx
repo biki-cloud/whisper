@@ -1,19 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { env } from "~/env";
 import { useToast } from "~/hooks/use-toast";
 import { Bell, BellRing, Send } from "lucide-react";
+
+const PUSH_NOTIFICATION_STORAGE_KEY = "push-notification-status";
+const PUSH_SUBSCRIPTION_STORAGE_KEY = "push-subscription";
 
 export function NotificationButton() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(
     null,
   );
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeNotificationState = async () => {
+      if (!isMounted) return;
+
+      try {
+        if (!("Notification" in window)) {
+          setIsLoading(false);
+          return;
+        }
+
+        // ローカルストレージから状態を読み込む
+        const storedStatus = localStorage.getItem(
+          PUSH_NOTIFICATION_STORAGE_KEY,
+        );
+        const storedSubscription = localStorage.getItem(
+          PUSH_SUBSCRIPTION_STORAGE_KEY,
+        );
+
+        if (storedStatus === "true" && storedSubscription) {
+          setIsSubscribed(true);
+          const parsedSubscription = JSON.parse(storedSubscription);
+          // PushSubscriptionの型チェック
+          if (
+            parsedSubscription &&
+            typeof parsedSubscription === "object" &&
+            "endpoint" in parsedSubscription
+          ) {
+            setSubscription(parsedSubscription as PushSubscription);
+          }
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("通知の初期化中にエラーが発生しました:", error);
+        setIsLoading(false);
+      }
+    };
+
+    void initializeNotificationState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 購読状態が変更されたときにローカルストレージを更新
+  useEffect(() => {
+    if (isSubscribed && subscription) {
+      localStorage.setItem(PUSH_NOTIFICATION_STORAGE_KEY, "true");
+      localStorage.setItem(
+        PUSH_SUBSCRIPTION_STORAGE_KEY,
+        JSON.stringify(subscription),
+      );
+    } else {
+      localStorage.removeItem(PUSH_NOTIFICATION_STORAGE_KEY);
+      localStorage.removeItem(PUSH_SUBSCRIPTION_STORAGE_KEY);
+    }
+  }, [isSubscribed, subscription]);
 
   const handleSubscribe = async () => {
     try {
