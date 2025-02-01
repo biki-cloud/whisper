@@ -58,6 +58,30 @@ export function NotificationButton() {
     }
   };
 
+  const handleUnsubscribe = async () => {
+    try {
+      setIsLoading(true);
+      if (subscription) {
+        await subscription.unsubscribe();
+      }
+      setSubscription(null);
+      setIsSubscribed(false);
+      toast({
+        title: "通知をオフにしました",
+        description: "プッシュ通知は届かなくなります",
+      });
+    } catch (error) {
+      console.error("通知解除エラー:", error);
+      toast({
+        title: "エラー",
+        description: "通知の解除に失敗しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSendNotification = async () => {
     if (!subscription) {
       toast({
@@ -105,10 +129,12 @@ export function NotificationButton() {
       <Button
         variant={isSubscribed ? "default" : "outline"}
         size="sm"
-        onClick={() => void handleSubscribe()}
-        disabled={isLoading || isSubscribed}
+        onClick={() =>
+          void (isSubscribed ? handleUnsubscribe() : handleSubscribe())
+        }
+        disabled={isLoading}
         className="transition-all duration-200"
-        aria-label="プッシュ通知を設定"
+        aria-label={isSubscribed ? "プッシュ通知を解除" : "プッシュ通知を設定"}
         data-testid="push-notification-subscribe-button"
         data-loading={String(isLoading)}
         data-state={
