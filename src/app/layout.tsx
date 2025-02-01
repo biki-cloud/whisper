@@ -5,6 +5,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { Navbar } from "~/components/Navbar";
 import { Footer } from "~/components/Footer";
 import { ServiceWorkerRegistration } from "../components/ServiceWorkerRegistration";
+import { Toaster } from "~/components/ui/toaster";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,6 +41,7 @@ export default function RootLayout({
             <Footer />
           </div>
         </TRPCReactProvider>
+        <Toaster />
         <Analytics />
       </body>
     </html>

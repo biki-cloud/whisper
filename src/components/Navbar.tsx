@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "~/lib/utils";
 import { motion } from "framer-motion";
-import { Home, MessageCircle, PenSquare, Wind } from "lucide-react";
+import { Home, MessageCircle, PenSquare, Wind, UserCircle } from "lucide-react";
 
 const navigation = [
   { name: "ホーム", href: "/", icon: Home },
   { name: "投稿一覧", href: "/posts", icon: MessageCircle },
   { name: "新規投稿", href: "/post/new", icon: PenSquare },
+  { name: "アカウント", href: "/account", icon: UserCircle },
 ];
 
 export function Navbar() {

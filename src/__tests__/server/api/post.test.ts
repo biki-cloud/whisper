@@ -136,7 +136,7 @@ describe("Post Router", () => {
         emotionTagId,
       });
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].emotionTag.id).toBe(emotionTagId);
+      expect(result.items[0]?.emotionTag?.id).toBe(emotionTagId);
     });
   });
 
