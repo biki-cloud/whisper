@@ -8,7 +8,6 @@ import {
 } from "~/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { NotificationButton } from "~/components/NotificationButton";
 
 export default function Home() {
   return (
@@ -116,9 +115,6 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>
-        <div className="flex flex-col items-center gap-2">
-          <NotificationButton />
-        </div>
       </div>
     </main>
   );
