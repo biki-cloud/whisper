@@ -6,6 +6,7 @@ import { cn } from "~/lib/utils";
 import { motion } from "framer-motion";
 import { Home, MessageCircle, PenSquare, Wind } from "lucide-react";
 import { NotificationToggle } from "./notification-toggle";
+import { NotificationButton } from "./NotificationButton";
 
 const navigation = [
   { name: "ホーム", href: "/", icon: Home },
@@ -64,7 +65,10 @@ export function Navbar() {
               );
             })}
             <div className="hidden md:block">
-              <NotificationToggle />
+              <div className="flex items-center gap-2">
+                <NotificationToggle />
+                <NotificationButton />
+              </div>
             </div>
           </div>
         </div>
