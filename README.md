@@ -65,6 +65,82 @@ Ventは、ユーザーが匿名で1日1回投稿し、他者と共感を共有�
 
 ---
 
+## 環境変数の設定
+
+本プロジェクトでは、ローカル開発環境（.env）とGitHub Actions（シークレット）で以下の環境変数を設定する必要があります。
+
+### データベース関連
+
+- `DATABASE_URL`: ローカルで読み込む開発環境用のデータベースURL
+
+  - 用途: 開発環境でのデータベース接続に使用
+  - 設定場所: .env
+
+- `DEV_DATABASE_URL`: Previewで読み込む開発環境用のデータベースURL
+  - 用途: 開発環境でのデータベース接続に使用
+  - 設定場所: GitHubシークレット
+
+### Vercel関連
+
+- `VERCEL_TOKEN`: Vercelのデプロイメントトークン
+
+  - 用途: GitHub ActionsからVercelへのデプロイに使用
+  - 設定場所: GitHubシークレット
+
+- `VERCEL_ORG_ID`: Vercelの組織ID
+
+  - 用途: GitHub ActionsからVercelへのデプロイに使用, デプロイ先の組織を指定
+  - 設定場所: GitHubシークレット
+
+- `VERCEL_PROJECT_ID`: Vercelのプロジェクトid
+  - 用途: GitHub ActionsからVercelへのデプロイに使用,デプロイ先のプロジェクトを指定
+  - 設定場所: GitHubシークレット
+
+### プッシュ通知関連
+
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: VAPID公開鍵
+
+  - 用途: WebPushの送信者認証に使用する公開鍵
+  - 設定場所: .env, GitHubシークレット
+
+- `VAPID_PRIVATE_KEY`: VAPID秘密鍵
+
+  - 用途: WebPushの送信者認証に使用する秘密鍵
+  - 設定場所: .env, GitHubシークレット
+
+- `VAPID_EMAIL`: VAPIDで使用するメールアドレス
+  - 用途: WebPush通知の送信者情報として使用
+  - 設定場所: .env, GitHubシークレット
+
+### 環境変数の設定手順
+
+1. **ローカル開発環境の設定**
+
+```bash
+# .envファイルを作成
+cp .env.example .env
+
+# 各環境変数を適切な値に設定
+```
+
+2. **GitHub Actionsの設定**
+
+- GitHubリポジトリの"Settings" > "Secrets and variables" > "Actions"で以下を設定
+  - 必要な環境変数をそれぞれ"New repository secret"で追加
+  - 各環境変数の値は適切な方法で生成・取得したものを使用
+
+3. **環境変数の検証**
+
+```bash
+# ローカル環境の検証
+pnpm dev
+
+# GitHub Actionsの検証
+git push origin main  # CICDパイプラインが自動的に実行される
+```
+
+---
+
 ## MVP (Minimum Viable prduct)
 
 1. **投稿機能**
