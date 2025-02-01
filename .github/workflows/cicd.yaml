@@ -35,6 +35,9 @@ jobs:
           ls -la coverage/
         env:
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_EMAIL: ${{ secrets.VAPID_EMAIL }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
       - name: Save coverage summary
         if: github.event_name == 'pull_request'
         run: |
