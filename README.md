@@ -65,6 +65,94 @@ Ventは、ユーザーが匿名で1日1回投稿し、他者と共感を共有�
 
 ---
 
+## 環境変数の設定
+
+本プロジェクトでは、ローカル開発環境（.env）とGitHub Actions（シークレット）で以下の環境変数を設定する必要があります。
+
+### データベース関連
+
+- `DATABASE_URL`: ローカルで読み込む開発環境用のデータベースURL
+
+  - 用途: 開発環境でのデータベース接続に使用
+  - 設定場所: .env
+
+- `DEV_DATABASE_URL`: Previewで読み込む開発環境用のデータベースURL
+  - 用途: 開発環境でのデータベース接続に使用
+  - 設定場所: GitHubシークレット
+
+### Vercel関連
+
+- `VERCEL_TOKEN`: Vercelのデプロイメントトークン
+
+  - 用途: GitHub ActionsからVercelへのデプロイに使用
+  - 設定場所: GitHubシークレット
+
+- `VERCEL_ORG_ID`: Vercelの組織ID
+
+  - 用途: GitHub ActionsからVercelへのデプロイに使用, デプロイ先の組織を指定
+  - 設定場所: GitHubシークレット
+
+- `VERCEL_PROJECT_ID`: Vercelのプロジェクトid
+  - 用途: GitHub ActionsからVercelへのデプロイに使用,デプロイ先のプロジェクトを指定
+  - 設定場所: GitHubシークレット
+
+### プッシュ通知関連
+
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: VAPID公開鍵
+
+  - 用途: WebPushの送信者認証に使用する公開鍵
+  - 設定場所: .env, GitHubシークレット
+
+- `VAPID_PRIVATE_KEY`: VAPID秘密鍵
+
+  - 用途: WebPushの送信者認証に使用する秘密鍵
+  - 設定場所: .env, GitHubシークレット
+
+- `VAPID_EMAIL`: VAPIDで使用するメールアドレス
+  - 用途: WebPush通知の送信者情報として使用
+  - 設定場所: .env, GitHubシークレット
+
+### 環境変数の設定手順
+
+1. **ローカル開発環境の設定**
+
+```bash
+# .envファイルを作成
+cp .env.example .env
+
+# 各環境変数を適切な値に設定
+```
+
+2. **GitHub Actionsの設定**
+
+- GitHubリポジトリの"Settings" > "Secrets and variables" > "Actions"で以下を設定
+  - 必要な環境変数をそれぞれ"New repository secret"で追加
+  - 各環境変数の値は適切な方法で生成・取得したものを使用
+
+3. **Vercel環境の設定**
+
+- Vercelのダッシュボードで以下の手順で環境変数を設定
+  1. プロジェクトの"Settings" > "Environment Variables"に移動
+  2. 以下の環境変数を追加：
+     - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: common
+     - `VAPID_PRIVATE_KEY`: common
+     - `VAPID_EMAIL`: common
+     - `DATABASE_URL`: pre-production, production
+     - `DIRECT_URL`: pre-production, production
+  3. プレビュー環境でも環境変数を有効にするため、各変数の"Preview"チェックボックスをオン
+
+1. **環境変数の検証**
+
+```bash
+# ローカル環境の検証
+pnpm dev
+
+# GitHub Actionsの検証
+git push origin main  # CICDパイプラインが自動的に実行される
+```
+
+---
+
 ## MVP (Minimum Viable prduct)
 
 1. **投稿機能**
@@ -240,4 +328,150 @@ pnpm prisma migrate reset --force --skip-seed --env-file .env.prd
 
 TODO
 
-- github actionsでデプロイしたvercelの動的urlにplaywrightを動作させてテストしたい
+以下の手順に基づいて、プッシュ通知のフローをコードとともに解説します。
+
+---
+
+### **通知の準備（前提）**
+
+1. **ユーザーがNotificationボタンを押す**
+   - ブラウザが`PushSubscription`情報（`endpoint`, `keys`など）を生成し、サーバーに送信します。
+   - サーバーはこの情報を保存します（ユーザーごとの識別に使用）。
+
+#### **コード例**
+
+- **クライアント側（サブスクリプション取得と送信）**
+
+```javascript
+// Notificationボタン押下時
+async function subscribeUser() {
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: "YOUR_PUBLIC_VAPID_KEY", // VAPIDキー
+  });
+
+  // サーバーにサブスクリプション情報を送信
+  await fetch("/api/save-subscription", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(subscription),
+  });
+}
+```
+
+- **サーバー側（サブスクリプション保存）**
+
+```javascript
+// Expressを例としたサーバーのエンドポイント
+app.post("/api/save-subscription", async (req, res) => {
+  const subscription = req.body;
+  // データベースにサブスクリプション情報を保存
+  await db.subscriptions.insert(subscription);
+  res.status(200).json({ success: true });
+});
+```
+
+---
+
+### **通知を送信するコード（スタンプ押下時）**
+
+2. **スタンプを押した時に通知を送信するコード**
+   - サーバーが、保存しておいたサブスクリプション情報を使って通知を送信します。
+
+#### **コード例**
+
+- **サーバー側（通知送信）**
+
+```javascript
+const webPush = require("web-push");
+
+// VAPIDキーを設定
+webPush.setVapidDetails(
+  "mailto:example@yourdomain.com",
+  "YOUR_PUBLIC_VAPID_KEY",
+  "YOUR_PRIVATE_VAPID_KEY",
+);
+
+async function sendPushNotification(subscription, payload) {
+  try {
+    await webPush.sendNotification(subscription, JSON.stringify(payload));
+    console.log("通知を送信しました");
+  } catch (error) {
+    console.error("通知送信エラー:", error);
+  }
+}
+
+// スタンプ押下時の処理
+app.post("/api/send-notification", async (req, res) => {
+  const { userId, message } = req.body;
+  const subscriptions = await db.subscriptions.find({ userId }); // サブスクリプション取得
+
+  // 通知を送信
+  const payload = { title: "新しいスタンプ", body: message, url: "/some-page" };
+  subscriptions.forEach((sub) => sendPushNotification(sub, payload));
+
+  res.status(200).json({ success: true });
+});
+```
+
+---
+
+### **通知の受信と表示**
+
+3. **サービスワーカーが通知を受信**
+   - サーバーから送られた通知データを受け取り、ポップアップとして表示します。
+   - 通知クリック時にページを開く処理を追加します。
+
+#### **コード例**
+
+- **サービスワーカー（通知の受信とクリック処理）**
+
+```javascript
+// pushイベントで通知を表示
+self.addEventListener("push", (event) => {
+  const data = event.data.json();
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      data: { url: data.url },
+      icon: "/path-to-icon.png",
+    }),
+  );
+});
+
+// notificationclickイベントでページを開く
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        if (clients.openWindow) {
+          return clients.openWindow(event.notification.data.url);
+        }
+      }),
+  );
+});
+```
+
+---
+
+### **ディレクトリ構成**
+
+1. **クライアント側**
+
+   - `src/components/NotificationButton.tsx`（通知ボタン）
+   - `src/serviceWorker.ts`（サービスワーカー登録）
+
+2. **サービスワーカー**
+
+   - `public/service-worker.js`
+
+3. **サーバー側**
+   - `server/routes/api/save-subscription.js`（サブスクリプション保存）
+   - `server/routes/api/send-notification.js`（通知送信）
+
+---
+
+これで、プッシュ通知の準備から送信、受信、表示、ページ遷移までの流れを実現できます。

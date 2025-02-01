@@ -35,6 +35,9 @@ jobs:
           ls -la coverage/
         env:
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_EMAIL: ${{ secrets.VAPID_EMAIL }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
       - name: Save coverage summary
         if: github.event_name == 'pull_request'
         run: |
@@ -82,6 +85,10 @@ jobs:
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_EMAIL: ${{ secrets.VAPID_EMAIL }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
       - name: Deploy Project Artifacts to Vercel
         id: preview
         run: echo "url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})" >> "${GITHUB_OUTPUT}"
@@ -119,6 +126,9 @@ jobs:
           NODE_ENV: development
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
           BASE_URL: ${{ needs.Deploy-Preview.outputs.preview-url }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_EMAIL: ${{ secrets.VAPID_EMAIL }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

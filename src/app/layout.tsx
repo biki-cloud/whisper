@@ -1,11 +1,10 @@
 import "~/styles/globals.css";
 import { Analytics } from "@vercel/analytics/react";
-
 import { Inter } from "next/font/google";
-
 import { TRPCReactProvider } from "~/trpc/react";
 import { Navbar } from "~/components/Navbar";
 import { Footer } from "~/components/Footer";
+import { ServiceWorkerRegistration } from "../components/ServiceWorkerRegistration";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,7 +33,10 @@ export default function RootLayout({
         <TRPCReactProvider>
           <div className="flex min-h-screen flex-col">
             <Navbar />
-            <div className="flex-1 pb-16 md:pb-0 md:pt-16">{children}</div>
+            <div className="flex-1 pb-16 md:pb-0 md:pt-16">
+              <ServiceWorkerRegistration />
+              {children}
+            </div>
             <Footer />
           </div>
         </TRPCReactProvider>
