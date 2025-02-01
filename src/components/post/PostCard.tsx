@@ -4,6 +4,8 @@ import { EMOTION_TAGS } from "~/constants/emotions";
 import { StampSelector } from "./StampSelector";
 import { DeletePostDialog } from "./DeletePostDialog";
 import type { PostWithRelations } from "~/hooks/post/usePostList";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 interface PostCardProps {
   post: PostWithRelations;
@@ -44,7 +46,15 @@ export function PostCard({ post, clientId, onEmotionTagClick }: PostCardProps) {
         <p className="whitespace-pre-wrap break-words text-sm">
           {post.content}
         </p>
-        <StampSelector postId={post.id} stamps={post.stamps} />
+        <div className="flex items-center justify-between">
+          <StampSelector postId={post.id} stamps={post.stamps} />
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/post/${post.id}`} className="flex items-center gap-2">
+              詳細を見る
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
