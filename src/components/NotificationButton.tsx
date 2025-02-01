@@ -39,15 +39,42 @@ export function NotificationButton() {
         );
 
         if (storedStatus === "true" && storedSubscription) {
-          setIsSubscribed(true);
           const parsedSubscription = JSON.parse(storedSubscription);
-          // PushSubscriptionの型チェック
+          // PushSubscriptionの型チェックと再構築
           if (
             parsedSubscription &&
             typeof parsedSubscription === "object" &&
             "endpoint" in parsedSubscription
           ) {
-            setSubscription(parsedSubscription as PushSubscription);
+            try {
+              // Service Workerの登録を確認
+              const registration = await navigator.serviceWorker.ready;
+              // 既存の購読を確認
+              const existingSubscription =
+                await registration.pushManager.getSubscription();
+
+              if (existingSubscription) {
+                // 既存の購読が有効な場合はそれを使用
+                setSubscription(existingSubscription);
+                setIsSubscribed(true);
+              } else {
+                // 既存の購読が無効な場合は新しく購読
+                const newSubscription =
+                  await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+                  });
+                setSubscription(newSubscription);
+                setIsSubscribed(true);
+              }
+            } catch (error) {
+              console.error("購読の再構築に失敗しました:", error);
+              // エラーが発生した場合は状態をリセット
+              localStorage.removeItem(PUSH_NOTIFICATION_STORAGE_KEY);
+              localStorage.removeItem(PUSH_SUBSCRIPTION_STORAGE_KEY);
+              setIsSubscribed(false);
+              setSubscription(null);
+            }
           }
         }
 
