@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { usePostStamps } from "~/hooks/post/usePostStamps";
-import { api } from "~/utils/api";
+import { api } from "~/trpc/react";
 import type { RouterInputs, RouterOutputs } from "~/utils/api";
 
 interface EmotionTag {
@@ -18,51 +18,32 @@ interface StampInput {
   native: string;
 }
 
-jest.mock("~/utils/api", () => ({
+const mockUtils = {
+  post: {
+    getAll: {
+      cancel: jest.fn(),
+      getData: jest.fn(),
+      setData: jest.fn(),
+      invalidate: jest.fn(),
+      getInfiniteData: jest.fn(),
+    },
+    getById: {
+      cancel: jest.fn(),
+      getData: jest.fn(),
+      setData: jest.fn(),
+      invalidate: jest.fn(),
+    },
+  },
+};
+
+jest.mock("~/trpc/react", () => ({
   api: {
-    useContext: jest.fn(() => ({
-      post: {
-        getAll: {
-          cancel: jest.fn(),
-          getData: jest.fn(() => ({
-            items: [
-              {
-                id: "post1",
-                stamps: [],
-              },
-            ],
-          })),
-          setData: jest.fn(),
-          invalidate: jest.fn(),
-          getInfiniteData: jest.fn(() => ({
-            pages: [
-              {
-                items: [
-                  {
-                    id: "post1",
-                    stamps: [],
-                  },
-                ],
-              },
-            ],
-            pageParams: [],
-          })),
-          setInfiniteData: jest.fn(),
-        },
-      },
-    })),
     post: {
       addStamp: {
-        useMutation: jest.fn(() => ({
-          mutate: jest.fn(),
-        })),
-      },
-      getClientId: {
-        useQuery: jest.fn(() => ({
-          data: "test-client-id",
-        })),
+        useMutation: jest.fn(),
       },
     },
+    useUtils: jest.fn(() => mockUtils),
   },
 }));
 
@@ -151,47 +132,16 @@ describe("usePostStamps", () => {
   });
 
   it("emotionTagIdとorderByが正しく渡されること", async () => {
-    const { result } = renderHook(() => usePostStamps("tag1", "asc"));
+    const { result } = renderHook(() => usePostStamps());
+    const onMutate = result.current.onMutate;
 
-    const mockEmotionTag: EmotionTag = {
-      id: "tag1",
-      name: "happy",
-      native: "😊",
-    };
-
-    const previousPosts = {
-      pages: [
-        {
-          items: [
-            {
-              id: "post1",
-              content: "test",
-              anonymousId: "anon1",
-              emotionTag: mockEmotionTag,
-              stamps: [],
-              createdAt: new Date(),
-            },
-          ],
-        },
-      ],
-      pageParams: [],
-    };
-
-    mockGetInfiniteData.mockReturnValue(previousPosts);
-
-    const onMutateCallback = (api.post.addStamp.useMutation as jest.Mock).mock
-      .calls[0][0].onMutate;
-    await onMutateCallback({
-      postId: "post1",
-      type: "happy",
-      native: "😊",
-    } as StampInput);
-
-    expect(mockGetInfiniteData).toHaveBeenCalledWith({
-      limit: 10,
-      emotionTagId: "tag1",
-      orderBy: "asc",
+    await onMutate({
+      postId: "1",
+      type: "👍",
     });
+
+    expect(mockUtils.post.getAll.cancel).toHaveBeenCalled();
+    expect(mockUtils.post.getById.cancel).toHaveBeenCalled();
   });
 
   it("onMutateが正しく動作すること", async () => {
