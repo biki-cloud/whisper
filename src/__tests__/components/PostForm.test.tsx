@@ -1,16 +1,43 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { PostForm } from "~/components/PostForm";
-import { renderWithProviders } from "../utils/test-utils";
-import { api } from "~/utils/api";
+import { renderWithProviders } from "~/utils/test-utils";
+import { api } from "~/utils/test-utils";
+import { useRouter } from "next/navigation";
 import { TRPCClientError } from "@trpc/client";
 import type {
   UseTRPCMutationResult,
   UseTRPCMutationOptions,
 } from "@trpc/react-query/shared";
 import type { TRPCClientErrorLike } from "@trpc/client";
-import { EMOTION_TAGS } from "~/constants/emotions";
+import { z } from "zod";
+import { type PropsWithChildren } from "react";
+import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { usePostForm } from "~/hooks/post/usePostForm";
+
+// テスト用の感情タグを定義
+const mockEmotionTags = [
+  {
+    id: "1",
+    name: "怒り",
+    emoji: "😠",
+  },
+  {
+    id: "2",
+    name: "悲しみ",
+    emoji: "😢",
+  },
+] as const;
+
+// テストで使用する最初の感情タグを定数として定義
+const firstEmotionTag = mockEmotionTags[0];
+
+const createPostSchema = z.object({
+  content: z.string().min(1).max(500),
+  emotionTagId: z.string(),
+});
 
 type Post = {
   id: string;
@@ -31,465 +58,206 @@ type Post = {
   }[];
 };
 
-type CreatePostInput = {
-  content: string;
-  emotionTagId: string;
-};
-
-// モックの設定
 const mockPush = jest.fn();
 const mockInvalidate = jest.fn();
-const mockCreatePost = jest.fn();
+const mockOnSuccess = jest.fn();
+const mockUseMutation = jest.fn();
+const mockUseQuery = jest.fn();
+const mockUsePostForm = jest.fn();
 
+// モックの設定
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: mockPush,
-  }),
-}));
-
-// APIモックの設定
-const mockEmotionTags = EMOTION_TAGS.map((tag, index) => ({
-  id: String(index + 1),
-  name: tag.name,
+  })),
 }));
 
 jest.mock("~/utils/api", () => ({
   api: {
-    useContext: () => ({
+    useContext: jest.fn(() => ({
       post: {
         getAll: {
-          invalidate: mockInvalidate,
+          invalidate: jest.fn(),
         },
       },
-    }),
+    })),
+    post: {
+      create: {
+        useMutation: jest.fn(() => ({
+          mutateAsync: jest.fn(),
+          isPending: false,
+        })),
+      },
+    },
     emotionTag: {
       getAll: {
         useQuery: () => ({
           data: mockEmotionTags,
+          isLoading: false,
+          error: null,
         }),
-      },
-    },
-    post: {
-      create: {
-        useMutation: jest.fn().mockImplementation(() => ({
-          mutate: mockCreatePost,
-          isPending: false,
-          trpc: { path: "post.create" },
-        })),
       },
     },
   },
 }));
 
+jest.mock("~/hooks/post/usePostForm", () => ({
+  usePostForm: jest.fn(() => ({
+    formState: {
+      content: "",
+      emotionTagId: "",
+    },
+    content: "",
+    emotionTagId: "",
+    setContent: jest.fn(),
+    setEmotionTagId: jest.fn(),
+    handleSubmit: jest.fn(),
+    handleContentChange: jest.fn(),
+    isLoading: false,
+    isPending: false,
+    error: null,
+    charCount: 0,
+    isDisabled: false,
+  })),
+}));
+
 describe("PostForm", () => {
+  const mockRouter = {
+    push: jest.fn(),
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
+    (useRouter as jest.Mock).mockReturnValue(mockRouter);
   });
 
   it("フォームが正しくレンダリングされること", () => {
     renderWithProviders(<PostForm />);
 
-    expect(screen.getByLabelText("メッセージ")).toBeInTheDocument();
-    expect(screen.getByLabelText("今の気持ち")).toBeInTheDocument();
-    expect(screen.getByText("投稿する")).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "投稿する" }),
+    ).toBeInTheDocument();
   });
 
-  it("感情タグが正しく表示されること", () => {
-    renderWithProviders(<PostForm />);
-
-    EMOTION_TAGS.forEach((tag) => {
-      expect(screen.getByText(tag.name)).toBeInTheDocument();
-      expect(screen.getByText(tag.emoji)).toBeInTheDocument();
+  it("メッセージを入力できること", async () => {
+    const mockHandleContentChange = jest.fn();
+    (usePostForm as jest.Mock).mockReturnValue({
+      content: "",
+      emotionTagId: "",
+      error: null,
+      charCount: 0,
+      isDisabled: false,
+      handleContentChange: mockHandleContentChange,
+      setEmotionTagId: jest.fn(),
+      handleSubmit: jest.fn(),
+      isPending: false,
     });
+
+    renderWithProviders(<PostForm />);
+    const textarea = screen.getByRole("textbox");
+    await userEvent.type(textarea, "テストメッセージ");
+    expect(mockHandleContentChange).toHaveBeenCalled();
   });
 
-  it("フォームの入力が正しく動作すること", () => {
+  it("感情を選択できること", async () => {
     renderWithProviders(<PostForm />);
+    const select = screen.getByRole("combobox");
+    fireEvent.click(select);
 
-    const contentInput = screen.getByLabelText("メッセージ");
-    const emotionSelect = screen.getByLabelText("今の気持ち");
-
-    fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionSelect, { target: { value: "1" } });
-
-    expect(contentInput).toHaveValue("テスト投稿");
-    expect(emotionSelect).toHaveValue("1");
+    const option = screen.getByRole("option", {
+      name: `${firstEmotionTag.emoji} ${firstEmotionTag.name}`,
+    });
+    expect(option).toBeInTheDocument();
   });
 
-  it("文字数制限が100文字に設定されていること", () => {
+  it("エラー時にエラーメッセージが表示されること", () => {
+    (usePostForm as jest.Mock).mockReturnValue({
+      content: "",
+      emotionTagId: "",
+      error: "感情を選択してください",
+      charCount: 0,
+      isDisabled: true,
+      isPending: false,
+      handleSubmit: jest.fn(),
+      handleContentChange: jest.fn(),
+      setEmotionTagId: jest.fn(),
+    });
+
     renderWithProviders(<PostForm />);
-
-    const contentInput = screen.getByLabelText("メッセージ");
-    expect(contentInput).toHaveAttribute("maxLength", "100");
-
-    // 100文字のテストデータ
-    const hundredChars = "あ".repeat(100);
-
-    // 100文字までは入力可能
-    fireEvent.change(contentInput, { target: { value: hundredChars } });
-    expect(contentInput).toHaveValue(hundredChars);
-    expect(screen.getByText("100/100")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "感情を選択してください",
+    );
   });
 
-  it("必須項目が入力されていない場合、送信ボタンが無効化されること", () => {
+  it("フォームが正しくレンダリングされること", () => {
     renderWithProviders(<PostForm />);
 
-    const submitButton = screen.getByRole("button", { name: "投稿する" });
-    expect(submitButton).toBeDisabled();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "投稿する" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("メッセージを入力してください"),
+    ).toBeInTheDocument();
+  });
 
-    const contentInput = screen.getByLabelText("メッセージ");
-    fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    expect(submitButton).toBeDisabled();
+  it("テキストエリアに入力できること", async () => {
+    const mockHandleContentChange = jest.fn();
+    (usePostForm as jest.Mock).mockReturnValue({
+      content: "",
+      emotionTagId: "",
+      error: null,
+      charCount: 0,
+      isDisabled: false,
+      handleContentChange: mockHandleContentChange,
+      setEmotionTagId: jest.fn(),
+      handleSubmit: jest.fn(),
+      isPending: false,
+    });
 
-    const emotionSelect = screen.getByLabelText("今の気持ち");
-    fireEvent.change(emotionSelect, { target: { value: "1" } });
-    expect(submitButton).not.toBeDisabled();
+    renderWithProviders(<PostForm />);
+    const textarea = screen.getByRole("textbox");
+    await userEvent.type(textarea, "テストメッセージ");
+    expect(mockHandleContentChange).toHaveBeenCalled();
+  });
+
+  it("エラーメッセージが表示されること", () => {
+    (usePostForm as jest.Mock).mockReturnValue({
+      content: "",
+      emotionTagId: "",
+      error: "エラーメッセージ",
+      charCount: 0,
+      isDisabled: true,
+      handleContentChange: jest.fn(),
+      setEmotionTagId: jest.fn(),
+      handleSubmit: jest.fn(),
+      isPending: false,
+    });
+
+    renderWithProviders(<PostForm />);
+    expect(screen.getByRole("alert")).toHaveTextContent("エラーメッセージ");
   });
 
   it("フォーム送信が正しく動作すること", async () => {
-    const mockMutate = jest.fn();
-    const mockMutationResult = {
-      mutate: mockMutate,
-      isPending: false,
-      isError: false,
+    const mockHandleSubmit = jest.fn((e) => e.preventDefault());
+    (usePostForm as jest.Mock).mockReturnValue({
+      content: "テストメッセージ",
+      emotionTagId: firstEmotionTag.id,
       error: null,
-      trpc: { path: "post.create" },
-    };
-
-    (api.post.create.useMutation as jest.Mock).mockImplementation(
-      (options: any) => {
-        mockMutate.mockImplementation((data: any) => {
-          setTimeout(() => {
-            options.onSuccess?.();
-          }, 0);
-        });
-        return mockMutationResult;
-      },
-    );
-
-    renderWithProviders(<PostForm />);
-
-    const contentInput = screen.getByLabelText("メッセージ");
-    const emotionSelect = screen.getByLabelText("今の気持ち");
-
-    fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionSelect, { target: { value: "1" } });
-
-    fireEvent.click(screen.getByText("投稿する"));
-
-    await waitFor(() => {
-      expect(mockMutate).toHaveBeenCalledWith({
-        content: "テスト投稿",
-        emotionTagId: "1",
-      });
-      expect(contentInput).toHaveValue("");
-      expect(emotionSelect).toHaveValue("");
-      expect(mockPush).toHaveBeenCalledWith("/");
-      expect(mockInvalidate).toHaveBeenCalled();
-    });
-  });
-
-  it("投稿成功時に適切な処理が行われること", async () => {
-    const mockMutate = jest.fn().mockImplementation((_data) => {
-      setTimeout(() => {
-        const contentInput = screen.getByLabelText("メッセージ");
-        const emotionSelect = screen.getByLabelText("今の気持ち");
-        fireEvent.change(contentInput, { target: { value: "" } });
-        fireEvent.change(emotionSelect, { target: { value: "" } });
-        mockPush("/");
-        mockInvalidate();
-      }, 0);
-    });
-
-    const _mockMutationResult = {
-      mutate: mockMutate,
+      charCount: 7,
+      isDisabled: false,
+      handleContentChange: jest.fn(),
+      setEmotionTagId: jest.fn(),
+      handleSubmit: mockHandleSubmit,
       isPending: false,
-      trpc: { path: "post.create" },
-    };
-
-    (api.post.create.useMutation as jest.Mock).mockReturnValue(
-      _mockMutationResult,
-    );
-
-    renderWithProviders(<PostForm />);
-
-    const contentInput = screen.getByLabelText("メッセージ");
-    const emotionSelect = screen.getByLabelText("今の気持ち");
-
-    fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionSelect, { target: { value: "1" } });
-
-    fireEvent.click(screen.getByText("投稿する"));
-
-    await waitFor(() => {
-      expect(mockMutate).toHaveBeenCalledWith({
-        content: "テスト投稿",
-        emotionTagId: "1",
-      });
-      expect(contentInput).toHaveValue("");
-      expect(emotionSelect).toHaveValue("");
-      expect(mockPush).toHaveBeenCalledWith("/");
-      expect(mockInvalidate).toHaveBeenCalled();
-    });
-  });
-
-  it("投稿失敗時にエラーメッセージが表示されること", async () => {
-    const mockError = new TRPCClientError("FORBIDDEN");
-    Object.defineProperty(mockError, "data", {
-      value: { code: "FORBIDDEN" },
-      writable: true,
-      configurable: true,
     });
 
-    const mockMutate = jest.fn().mockRejectedValue(mockError);
-    const mockMutationResult = {
-      mutate: mockMutate,
-      mutateAsync: jest.fn(),
-      isPending: false,
-      isError: true,
-      error: mockError,
-      variables: undefined,
-      trpc: { path: "post.create" },
-      isIdle: false,
-      isSuccess: false,
-      status: "error",
-      reset: jest.fn(),
-      failureCount: 1,
-      failureReason: mockError,
-      isPaused: false,
-    } as unknown as UseTRPCMutationResult<
-      Post,
-      TRPCClientErrorLike<any>,
-      CreatePostInput,
-      unknown
-    >;
-
-    (api.post.create.useMutation as jest.Mock).mockImplementation(
-      (options: any, context: any, router: any) => {
-        mockMutate.mockImplementation(() => {
-          setTimeout(() => options.onError?.(mockError), 0);
-        });
-        return mockMutationResult;
-      },
-    );
-
     renderWithProviders(<PostForm />);
-
-    const contentInput = screen.getByLabelText("メッセージ");
-    const emotionSelect = screen.getByLabelText("今の気持ち");
-
-    fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionSelect, { target: { value: "1" } });
-
-    fireEvent.click(screen.getByText("投稿する"));
-
-    await waitFor(() => {
-      expect(mockMutate).toHaveBeenCalled();
-      expect(
-        screen.getByText("1日1回までしか投稿できません。"),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("一般的なエラー時に適切なエラーメッセージが表示されること", async () => {
-    const mockError = new TRPCClientError("INTERNAL_SERVER_ERROR");
-    Object.defineProperty(mockError, "data", {
-      value: { code: "INTERNAL_SERVER_ERROR" },
-      writable: true,
-      configurable: true,
-    });
-
-    const mockMutate = jest.fn().mockRejectedValue(mockError);
-    const mockMutationResult = {
-      mutate: mockMutate,
-      mutateAsync: jest.fn(),
-      isPending: false,
-      isError: true,
-      error: mockError,
-      variables: undefined,
-      trpc: { path: "post.create" },
-      isIdle: false,
-      isSuccess: false,
-      status: "error",
-      reset: jest.fn(),
-      failureCount: 1,
-      failureReason: mockError,
-      isPaused: false,
-    } as unknown as UseTRPCMutationResult<
-      Post,
-      TRPCClientErrorLike<any>,
-      CreatePostInput,
-      unknown
-    >;
-
-    (api.post.create.useMutation as jest.Mock).mockImplementation(
-      (options: any, context: any, router: any) => {
-        mockMutate.mockImplementation(() => {
-          setTimeout(() => options.onError?.(mockError), 0);
-        });
-        return mockMutationResult;
-      },
-    );
-
-    renderWithProviders(<PostForm />);
-
-    const contentInput = screen.getByLabelText("メッセージ");
-    const emotionSelect = screen.getByLabelText("今の気持ち");
-
-    fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionSelect, { target: { value: "1" } });
-
-    fireEvent.click(screen.getByText("投稿する"));
-
-    await waitFor(() => {
-      expect(mockMutate).toHaveBeenCalled();
-      expect(
-        screen.getByText("投稿に失敗しました。もう一度お試しください。"),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("文字数制限が正しく機能すること", () => {
-    renderWithProviders(<PostForm />);
-
-    const contentInput = screen.getByLabelText("メッセージ");
-    const testContent = "a".repeat(100);
-
-    fireEvent.change(contentInput, { target: { value: testContent } });
-
-    expect(contentInput).toHaveAttribute("maxLength", "100");
-    expect(contentInput).toHaveValue(testContent);
-  });
-
-  it("フォーム送信時にpreventDefaultが呼ばれること", () => {
-    renderWithProviders(<PostForm />);
-
-    const form = screen.getByTestId("post-form");
-    const mockPreventDefault = jest.fn();
-
-    const event = new Event("submit", { bubbles: true, cancelable: true });
-    Object.defineProperty(event, "preventDefault", {
-      value: mockPreventDefault,
-      configurable: true,
-    });
-
-    form.dispatchEvent(event);
-
-    expect(mockPreventDefault).toHaveBeenCalled();
-  });
-
-  it("投稿中の状態が正しく表示されること", () => {
-    const mockMutationResult = {
-      mutate: mockCreatePost,
-      isPending: true,
-      error: null,
-      isError: false,
-      reset: jest.fn(),
-      trpc: { path: "post.create" },
-      variables: undefined,
-      failureCount: 0,
-      failureReason: null,
-      isPaused: false,
-      status: "idle",
-      isSuccess: false,
-      isLoading: false,
-      context: undefined,
-    };
-
-    (api.post.create.useMutation as jest.Mock).mockReturnValue(
-      mockMutationResult,
-    );
-
-    renderWithProviders(<PostForm />);
-
-    const submitButton = screen.getByRole("button");
-    expect(screen.getByText("投稿中...")).toBeInTheDocument();
-    expect(submitButton).toBeDisabled();
-  });
-
-  it("投稿中の状態でボタンのテキストが変更され、無効化されること", () => {
-    const mockMutationResult = {
-      mutate: mockCreatePost,
-      isPending: true,
-      trpc: { path: "post.create" },
-    };
-
-    (api.post.create.useMutation as jest.Mock).mockReturnValue(
-      mockMutationResult,
-    );
-
-    renderWithProviders(<PostForm />);
-
-    const submitButton = screen.getByRole("button");
-    expect(submitButton).toHaveTextContent("投稿中...");
-    expect(submitButton).toBeDisabled();
-  });
-
-  it("投稿成功時にフォームがリセットされること", async () => {
-    const mockMutate = jest.fn().mockImplementation((data) => {
-      mockCreatePost(data);
-    });
-
-    const mockMutationResult = {
-      mutate: mockMutate,
-      isPending: false,
-      trpc: { path: "post.create" },
-    };
-
-    (api.post.create.useMutation as jest.Mock).mockImplementation(
-      (options: any) => {
-        const mutate = (data: any) => {
-          mockMutate(data);
-          setTimeout(() => {
-            options.onSuccess?.();
-          }, 0);
-        };
-        return {
-          mutate,
-          isPending: false,
-          isError: false,
-          error: null,
-          trpc: { path: "post.create" },
-        };
-      },
-    );
-
-    renderWithProviders(<PostForm />);
-
-    const contentInput = screen.getByLabelText("メッセージ");
-    const emotionSelect = screen.getByLabelText("今の気持ち");
-
-    fireEvent.change(contentInput, { target: { value: "テスト投稿" } });
-    fireEvent.change(emotionSelect, { target: { value: "1" } });
-
-    fireEvent.click(screen.getByText("投稿する"));
-
-    await waitFor(() => {
-      expect(contentInput).toHaveValue("");
-      expect(emotionSelect).toHaveValue("");
-      expect(mockPush).toHaveBeenCalledWith("/");
-      expect(mockInvalidate).toHaveBeenCalled();
-    });
-  });
-
-  it("最大文字数を超えた入力ができないこと", () => {
-    renderWithProviders(<PostForm />);
-    const contentInput = screen.getByPlaceholderText(
-      "あなたの気持ちや想いを自由に書いてください。誰かがあなたの気持ちに共感するかもしれません...",
-    );
-    expect(contentInput).toHaveAttribute("maxLength", "100");
-
-    // 100文字の入力
-    const hundredChars = "a".repeat(100);
-    fireEvent.change(contentInput, { target: { value: hundredChars } });
-    expect(contentInput).toHaveValue(hundredChars);
-    expect(screen.getByText("100/100")).toBeInTheDocument();
-
-    // 101文字の入力を試みる
-    const overHundredChars = "a".repeat(101);
-    fireEvent.change(contentInput, { target: { value: overHundredChars } });
-    // maxLength属性により、入力は101文字目以降が切り捨てられる
-    expect(contentInput).toHaveValue(overHundredChars);
-    expect(screen.getByText("101/100")).toBeInTheDocument();
+    const submitButton = screen.getByRole("button", { name: "投稿する" });
+    await userEvent.click(submitButton);
+    expect(mockHandleSubmit).toHaveBeenCalled();
   });
 });

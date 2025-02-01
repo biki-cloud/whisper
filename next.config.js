@@ -15,6 +15,9 @@ const withPWA = nextPWA({
 /** @type {import("next").NextConfig} */
 const config = {
   reactStrictMode: true,
+  experimental: {
+    serverComponentsExternalPackages: ["pino"],
+  },
 };
 
 export default withPWA(config);

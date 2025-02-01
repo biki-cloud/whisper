@@ -237,3 +237,7 @@ pnpm prisma migrate reset --force --skip-seed --env-file .env.prd
 今は直接スタンプを定義していますが、今後、大量のスタンプをユーザに選択してもらいたいです。しかし、大量のスタンプデータをコードで管理するのは現実的ではありません。
 なのでopenEmojiライブラリを利用してスタンプを大量に使用できるようにし、自分の方ではスタンプを定義したくないです。
 実装できますか？
+
+TODO
+
+- github actionsでデプロイしたvercelの動的urlにplaywrightを動作させてテストしたい

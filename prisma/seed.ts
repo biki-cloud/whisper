@@ -1,51 +1,28 @@
 import { PrismaClient } from "@prisma/client";
-import { v4 as uuidv4 } from "uuid";
-import { EMOTION_TAGS } from "../src/constants/emotions";
+import { seedEmotionTags } from "./seeds/required/seed_emotion_tags";
+import { seedPosts } from "./seeds/samples/seed_posts";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // 感情タグのデータを作成
-  const emotionTags = await Promise.all(
-    EMOTION_TAGS.map((tag) =>
-      prisma.emotionTag.create({
-        data: {
-          name: tag.name,
-        },
-      }),
-    ),
-  );
+  const seedType = process.env.SEED_TYPE ?? "all";
 
-  if (!emotionTags[3] || !emotionTags[5] || !emotionTags[1]) {
-    throw new Error("Failed to create emotion tags");
+  if (seedType === "required" || seedType === "all") {
+    // 必須の感情タグデータを作成
+    const emotionTags = await seedEmotionTags(prisma);
+    console.log("Required seeds completed");
+
+    // サンプルデータを作成する場合
+    if (seedType === "all" && process.env.NODE_ENV !== "production") {
+      await seedPosts(prisma, emotionTags);
+      console.log("Sample seeds completed");
+    }
+  } else if (seedType === "samples" && process.env.NODE_ENV !== "production") {
+    // サンプルデータのみ作成する場合は、既存の感情タグを取得
+    const emotionTags = await prisma.emotionTag.findMany();
+    await seedPosts(prisma, emotionTags);
+    console.log("Sample seeds completed");
   }
-
-  // 投稿データを作成
-  await Promise.all([
-    prisma.post.create({
-      data: {
-        content: "今日は晴れて気持ちがいい一日でした！",
-        emotionTagId: emotionTags[3].id, // 喜び
-        anonymousId: uuidv4(),
-      },
-    }),
-    prisma.post.create({
-      data: {
-        content: "友達と遊園地に行って楽しかった！",
-        emotionTagId: emotionTags[5].id, // 楽しい
-        anonymousId: uuidv4(),
-      },
-    }),
-    prisma.post.create({
-      data: {
-        content: "大切なものをなくしてしまった...",
-        emotionTagId: emotionTags[1].id, // 悲しみ
-        anonymousId: uuidv4(),
-      },
-    }),
-  ]);
-
-  console.log("シードデータの作成が完了しました");
 }
 
 void main()

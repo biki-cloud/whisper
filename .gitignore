@@ -54,3 +54,10 @@ yarn-error.log*
 
 .env.dev
 .env.prd
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

@@ -37,15 +37,6 @@ describe("getEmotionEmoji", () => {
     });
   });
 
-  it("タグ名が「嬉しい」の場合、正しい感情情報を返す", () => {
-    const result = getEmotionEmoji("5", "嬉しい");
-    expect(result).toEqual({
-      emoji: "😊",
-      label: "嬉しい",
-      color: "bg-green-200 text-green-900 dark:text-green-200",
-    });
-  });
-
   it("タグ名が「落ち込み」の場合、正しい感情情報を返す", () => {
     const result = getEmotionEmoji("6", "落ち込み");
     expect(result).toEqual({

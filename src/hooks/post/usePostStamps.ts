@@ -1,36 +1,87 @@
+"use client";
+
 import { useCallback } from "react";
 import { api } from "~/utils/api";
+import { useClientId } from "~/hooks/useClientId";
+import type { RouterOutputs } from "~/utils/api";
+import type { InfiniteData } from "@tanstack/react-query";
+
+type PostResponse = RouterOutputs["post"]["getAll"];
+type Stamp = {
+  id: string;
+  type: string;
+  native: string;
+  anonymousId: string;
+  postId: string;
+  createdAt: Date;
+};
+
+interface StampInput {
+  postId: string;
+  type: string;
+  native: string;
+}
+
+interface StampMutationContext {
+  previousPosts: InfiniteData<PostResponse> | undefined;
+}
+
+interface StampMutationError {
+  message: string;
+}
+
+interface StampMutationOptions {
+  onMutate?: (variables: StampInput) => Promise<StampMutationContext>;
+  onError?: (
+    error: StampMutationError,
+    variables: StampInput,
+    context: StampMutationContext,
+  ) => void;
+  onSettled?: () => void;
+}
 
 export function usePostStamps(
   emotionTagId?: string,
-  orderBy: "desc" | "asc" = "desc",
+  orderBy: "asc" | "desc" = "desc",
+  _: StampMutationOptions = {},
 ) {
+  const { clientId } = useClientId();
   const utils = api.useContext();
-  const { data: clientId } = api.post.getClientId.useQuery();
 
-  const addStamp = api.post.addStamp.useMutation({
-    onMutate: async ({ postId, type }) => {
+  const { mutate: addStamp } = api.post.addStamp.useMutation({
+    async onMutate(variables: StampInput) {
+      console.log("🚀 onMutate called with variables:", variables);
+
       await utils.post.getAll.cancel();
-      const prevData = utils.post.getAll.getInfiniteData({
+
+      const previousPosts = utils.post.getAll.getInfiniteData({
         limit: 10,
         emotionTagId,
         orderBy,
       });
+      console.log("📦 Previous posts state:", previousPosts);
 
       utils.post.getAll.setInfiniteData(
         { limit: 10, emotionTagId, orderBy },
         (old) => {
           if (!old) return { pages: [], pageParams: [] };
+          console.log("🔄 Updating infinite data");
           return {
             ...old,
             pages: old.pages.map((page) => ({
               ...page,
               items: page.items.map((post) => {
-                if (post.id !== postId) return post;
+                if (post.id !== variables.postId) return post;
+                console.log("🎯 Updating post with ID:", post.id);
+
+                // 既存のスタンプがあれば削除、なければ追加
                 const existingStamp = post.stamps.find(
-                  (s) => s.type === type && s.anonymousId === clientId,
+                  (s) =>
+                    s.type === variables.type && s.anonymousId === clientId,
                 );
+
                 if (existingStamp) {
+                  console.log("🗑️ Removing existing stamp:", existingStamp);
                   return {
                     ...post,
                     stamps: post.stamps.filter(
@@ -38,18 +89,20 @@ export function usePostStamps(
                     ),
                   };
                 }
+
+                console.log("➕ Adding new stamp");
                 return {
                   ...post,
                   stamps: [
                     ...post.stamps,
                     {
                       id: `temp-${Date.now()}`,
-                      type,
-                      anonymousId: clientId ?? "",
-                      postId,
+                      type: variables.type,
+                      anonymousId: clientId,
+                      postId: variables.postId,
                       createdAt: new Date(),
-                      native: type,
-                    },
+                      native: variables.native,
+                    } as Stamp,
                   ],
                 };
               }),
@@ -57,29 +110,48 @@ export function usePostStamps(
           };
         },
       );
-      return { prevData };
+
+      return { previousPosts };
     },
-    onError: (_, __, context) => {
-      if (context?.prevData) {
+
+    onError(error, variables, context) {
+      console.error("❌ Error occurred:", error);
+      console.log("🔄 Rolling back to previous state");
+      if (context?.previousPosts) {
         utils.post.getAll.setInfiniteData(
           { limit: 10, emotionTagId, orderBy },
-          context.prevData,
+          () => ({
+            pages: context.previousPosts?.pages ?? [],
+            pageParams: context.previousPosts?.pageParams ?? [],
+          }),
         );
       }
+    },
+
+    onSuccess(data, variables) {
+      console.log("✅ Mutation succeeded:", { data, variables });
     },
   });
 
   const handleStampClick = useCallback(
     (postId: string, type: string, native?: string) => {
-      if (!clientId) return;
-
-      void addStamp.mutate({ postId, type, native: native ?? type });
+      console.log("👆 Stamp clicked:", { postId, type, native });
+      if (!clientId) {
+        console.warn("⚠️ No clientId available");
+        return;
+      }
+      const input: StampInput = {
+        postId,
+        type,
+        native: native ?? type,
+      };
+      addStamp(input);
     },
-    [clientId, addStamp],
+    [addStamp, clientId],
   );
 
   return {
-    clientId,
     handleStampClick,
+    clientId,
   };
 }

@@ -11,6 +11,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "~/server/db";
+import { getLogger } from "~/lib/logger/server";
 
 /**
  * 1. CONTEXT
@@ -88,7 +89,12 @@ export const createTRPCRouter = t.router;
  * network latency that would occur in production but not in local development.
  */
 const timingMiddleware = t.middleware(async ({ next, path }) => {
+  const logger = getLogger("trpc");
+  // const logger = pino();
+
   const start = Date.now();
+
+  logger.info("[Request] " + path);
 
   if (t._config.isDev) {
     // artificial delay in dev
@@ -99,7 +105,19 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   const result = await next();
 
   const end = Date.now();
-  console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
+  const duration = end - start;
+  // duration to sec
+  const durationSec = duration / 1000;
+
+  logger.info(
+    "[Response] " +
+      path +
+      ", execTime " +
+      durationSec +
+      "s" +
+      ", status " +
+      (result.ok ? "success" : "error"),
+  );
 
   return result;
 });
