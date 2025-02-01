@@ -3,6 +3,7 @@
 import { Button } from "~/components/ui/button";
 import { env } from "~/env";
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 export function NotificationButton() {
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -32,35 +33,94 @@ export function NotificationButton() {
       setIsSubscribed(true);
 
       console.log("プッシュ通知の設定完了しました");
-    } catch (error) {
-      console.error("Error subscribing to push notifications:", error);
-      alert("プッシュ通知の設定に失敗しました");
+    } catch (subscribeError: unknown) {
+      if (subscribeError instanceof Error) {
+        console.error("プッシュ通知サブスクリプションエラー:", subscribeError);
+        console.error("エラーの詳細:", {
+          name: subscribeError.name,
+          message: subscribeError.message,
+          stack: subscribeError.stack,
+        });
+      }
+      toast.error("プッシュ通知の設定に失敗しました");
+      return;
     }
   };
 
   const handleSendNotification = async () => {
-    if (!subscription) return;
-
-    console.log("通知を開始します");
     try {
-      await fetch("/api/push", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subscription,
-          payload: {
-            title: "テスト通知",
-            body: "プッシュ通知のテストです",
-            url: "/",
+      console.log("通知権限の状態:", Notification.permission);
+
+      if (!("Notification" in window)) {
+        console.error("このブラウザは通知をサポートしていません");
+        toast.error("このブラウザは通知をサポートしていません");
+        return;
+      }
+
+      // Service Workerのサポート確認
+      if (!("serviceWorker" in navigator)) {
+        console.error("このブラウザはService Workerをサポートしていません");
+        toast.error("このブラウザはService Workerをサポートしていません");
+        return;
+      }
+
+      // Push APIのサポート確認
+      if (!("PushManager" in window)) {
+        console.error("このブラウザはプッシュ通知をサポートしていません");
+        toast.error("このブラウザはプッシュ通知をサポートしていません");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      console.log("Service Worker登録状態:", registration);
+
+      try {
+        const newSubscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        });
+        console.log("プッシュ通知サブスクリプション成功:", newSubscription);
+        setSubscription(newSubscription);
+        setIsSubscribed(true);
+
+        if (!newSubscription) {
+          toast.error("通知の設定が必要です");
+          return;
+        }
+
+        await fetch("/api/push", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        }),
-      });
-      console.log("通知が終了しました");
+          body: JSON.stringify({
+            subscription: newSubscription,
+            payload: {
+              title: "テスト通知",
+              body: "プッシュ通知のテストです",
+              url: "/",
+            },
+          }),
+        });
+        console.log("テスト通知を送信しました");
+      } catch (subscribeError: unknown) {
+        if (subscribeError instanceof Error) {
+          console.error(
+            "プッシュ通知サブスクリプションエラー:",
+            subscribeError,
+          );
+          console.error("エラーの詳細:", {
+            name: subscribeError.name,
+            message: subscribeError.message,
+            stack: subscribeError.stack,
+          });
+        }
+        toast.error("プッシュ通知の設定に失敗しました");
+        return;
+      }
     } catch (error) {
-      console.error("Error sending notification:", error);
-      alert("通知の送信に失敗しました");
+      console.error("通知設定エラー:", error);
+      toast.error("通知の設定に失敗しました");
     }
   };
 
