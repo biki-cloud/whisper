@@ -129,7 +129,19 @@ cp .env.example .env
   - 必要な環境変数をそれぞれ"New repository secret"で追加
   - 各環境変数の値は適切な方法で生成・取得したものを使用
 
-3. **環境変数の検証**
+3. **Vercel環境の設定**
+
+- Vercelのダッシュボードで以下の手順で環境変数を設定
+  1. プロジェクトの"Settings" > "Environment Variables"に移動
+  2. 以下の環境変数を追加：
+     - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: common
+     - `VAPID_PRIVATE_KEY`: common
+     - `VAPID_EMAIL`: common
+     - `DATABASE_URL`: pre-production, production
+     - `DIRECT_URL`: pre-production, production
+  3. プレビュー環境でも環境変数を有効にするため、各変数の"Preview"チェックボックスをオン
+
+1. **環境変数の検証**
 
 ```bash
 # ローカル環境の検証
