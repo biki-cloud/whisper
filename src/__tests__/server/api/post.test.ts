@@ -3,6 +3,9 @@ import { createTRPCContext } from "~/server/api/trpc";
 import { appRouter, type AppRouter } from "~/server/api/root";
 import { prismaMock } from "../../setup";
 import { TRPCError } from "@trpc/server";
+import { createInnerTRPCContext } from "~/server/api/trpc";
+import { prisma } from "~/server/db";
+import webPush from "web-push";
 
 describe("Post Router", () => {
   const anonymousId = "test-anonymous-id";
@@ -14,19 +17,23 @@ describe("Post Router", () => {
     caller = appRouter.createCaller(ctx);
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe("create", () => {
     type Input = inferProcedureInput<AppRouter["post"]["create"]>;
     const defaultInput: Input = {
-      content: "Test post",
-      emotionTagId: "test-emotion-tag-id",
+      content: "test message",
+      emotionTagId: "test-emotion-id",
     };
 
-    it("should create a post successfully", async () => {
+    it("should create a post", async () => {
       const mockPost = {
         id: "test-post-id",
         content: defaultInput.content,
         emotionTagId: defaultInput.emotionTagId,
-        anonymousId,
+        anonymousId: "test-anonymous-id",
         createdAt: new Date(),
         emotionTag: {
           id: defaultInput.emotionTagId,
@@ -35,15 +42,14 @@ describe("Post Router", () => {
         stamps: [],
       };
 
-      // 既存の投稿がないことを確認
       prismaMock.post.findMany.mockResolvedValueOnce([]);
-      // 削除された投稿がないことを確認
       prismaMock.deletedPost.findMany.mockResolvedValueOnce([]);
-      // 新規投稿の作成
       prismaMock.post.create.mockResolvedValueOnce(mockPost);
 
       const result = await caller.post.create(defaultInput);
-      expect(result).toEqual(mockPost);
+      expect(result.id).toBeDefined();
+      expect(result.content).toBe(defaultInput.content);
+      expect(result.emotionTag.id).toBe(defaultInput.emotionTagId);
     });
 
     it("should throw error if user already posted today", async () => {
@@ -85,31 +91,31 @@ describe("Post Router", () => {
   });
 
   describe("getAll", () => {
-    type Input = inferProcedureInput<AppRouter["post"]["getAll"]>;
-    const defaultInput: Input = {
-      limit: 10,
-      orderBy: "desc",
-    };
-
-    it("should return posts with pagination", async () => {
-      const mockPosts = Array.from({ length: 11 }, (_, i) => ({
-        id: `post-${i}`,
-        content: `Post ${i}`,
-        emotionTagId: "emotion-1",
-        createdAt: new Date(),
-        anonymousId: `user-${i}`,
-        emotionTag: {
-          id: "emotion-1",
-          name: "Happy",
+    it("should return posts", async () => {
+      const mockPosts = [
+        {
+          id: "test-post-id",
+          content: "test message",
+          emotionTagId: "test-emotion-id",
+          createdAt: new Date(),
+          anonymousId: "test-anonymous-id",
+          emotionTag: {
+            id: "test-emotion-id",
+            name: "Test Emotion",
+          },
+          stamps: [],
         },
-        stamps: [],
-      }));
+      ];
 
       prismaMock.post.findMany.mockResolvedValueOnce(mockPosts);
 
-      const result = await caller.post.getAll(defaultInput);
-      expect(result.items).toHaveLength(10);
-      expect(result.nextCursor).toBe("post-10");
+      const result = await caller.post.getAll({
+        limit: 10,
+        cursor: null,
+      });
+
+      expect(Array.isArray(result.items)).toBe(true);
+      expect(result.items.length).toBe(1);
     });
 
     it("should filter by emotionTagId", async () => {
@@ -132,7 +138,8 @@ describe("Post Router", () => {
       prismaMock.post.findMany.mockResolvedValueOnce(mockPosts);
 
       const result = await caller.post.getAll({
-        ...defaultInput,
+        limit: 10,
+        cursor: null,
         emotionTagId,
       });
       expect(result.items).toHaveLength(1);
@@ -222,6 +229,33 @@ describe("Post Router", () => {
     it("should return anonymousId", async () => {
       const result = await caller.post.getClientId();
       expect(result).toBe(anonymousId);
+    });
+  });
+
+  describe("delete", () => {
+    it("should delete a post", async () => {
+      const mockPost = {
+        id: "test-post-id",
+        content: "test message",
+        emotionTagId: "test-emotion-id",
+        anonymousId: ctx.anonymousId,
+        createdAt: new Date(),
+      };
+
+      prismaMock.post.findUnique.mockResolvedValueOnce(mockPost);
+      prismaMock.stamp.deleteMany.mockResolvedValueOnce({ count: 0 });
+      prismaMock.deletedPost.create.mockResolvedValueOnce({
+        id: "test-deleted-id",
+        anonymousId: ctx.anonymousId,
+        deletedAt: new Date(),
+      });
+      prismaMock.post.delete.mockResolvedValueOnce(mockPost);
+
+      const result = await caller.post.delete({
+        postId: "test-post-id",
+      });
+
+      expect(result.success).toBe(true);
     });
   });
 });

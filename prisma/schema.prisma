@@ -63,3 +63,13 @@ model DeletedPost {
   @@index([anonymousId])
   @@index([deletedAt])
 }
+
+model PushSubscription {
+  id           String   @id @default(cuid())
+  anonymousId  String   @unique
+  subscription String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([anonymousId])
+}

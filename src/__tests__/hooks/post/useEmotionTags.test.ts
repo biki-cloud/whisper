@@ -44,7 +44,9 @@ describe("useEmotionTags", () => {
     });
 
     expect(result.current.emotionTags).toEqual([]);
-    expect(result.current.error).toBe("感情タグの読み込みに失敗しました");
+    expect(result.current.error).toBe(
+      "感情タグの読み込みに失敗しました: Error: API Error",
+    );
     expect(mockEmotionTagApi.getAll).toHaveBeenCalledTimes(1);
   });
 
@@ -59,7 +61,9 @@ describe("useEmotionTags", () => {
     await act(async () => {
       await result.current.loadEmotionTags();
     });
-    expect(result.current.error).toBe("感情タグの読み込みに失敗しました");
+    expect(result.current.error).toBe(
+      "感情タグの読み込みに失敗しました: Error: API Error",
+    );
 
     // 2回目の呼び出しで成功
     await act(async () => {

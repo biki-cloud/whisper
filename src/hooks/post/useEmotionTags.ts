@@ -15,7 +15,7 @@ export function useEmotionTags(emotionTagApi: EmotionTagsApi) {
       setEmotionTags(tags);
       setError(null);
     } catch (err) {
-      setError("感情タグの読み込みに失敗しました");
+      setError(`感情タグの読み込みに失敗しました: ${String(err)}`);
     }
   };
 
