@@ -2,12 +2,24 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { type Prisma } from "@prisma/client";
+import webPush from "web-push";
+import { env } from "~/env";
+import { getLogger } from "~/lib/logger/server";
+
+const logger = getLogger("PostRouter");
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+webPush.setVapidDetails(
+  `mailto:${env.VAPID_EMAIL}`,
+  env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+  env.VAPID_PRIVATE_KEY,
+);
+
 export const postRouter = createTRPCRouter({
   create: publicProcedure
     .input(
@@ -205,6 +217,47 @@ export const postRouter = createTRPCRouter({
               anonymousId: ctx.anonymousId,
             },
           });
+          logger.debug("スタンプを追加しました");
+
+          // 投稿の所有者情報を取得
+          const post = await tx.post.findUnique({
+            where: { id: input.postId },
+            select: {
+              anonymousId: true,
+            },
+          });
+          logger.debug(`投稿の所有者情報を取得しました. ${post?.anonymousId}`);
+          logger.debug(`ctx.anonymousId: ${ctx.anonymousId}`);
+
+          if (post && post.anonymousId !== ctx.anonymousId) {
+            logger.debug("Push通知を送信します");
+            // 投稿所有者のPush通知サブスクリプションを取得
+            const pushSubscription = await tx.pushSubscription.findFirst({
+              where: {
+                anonymousId: post.anonymousId,
+              },
+              select: {
+                subscription: true,
+              },
+            });
+
+            if (pushSubscription?.subscription) {
+              try {
+                logger.info("Push通知を送信します");
+                // Push通知を送信
+                await webPush.sendNotification(
+                  JSON.parse(pushSubscription.subscription),
+                  JSON.stringify({
+                    title: "新しいスタンプ",
+                    body: "あなたの投稿にスタンプが押されました！",
+                    url: `/post/${input.postId}`,
+                  }),
+                );
+              } catch (error) {
+                console.error("Push通知送信エラー:", error);
+              }
+            }
+          }
         }
 
         // 更新後のスタンプ一覧のみを取得
@@ -220,8 +273,8 @@ export const postRouter = createTRPCRouter({
           },
         });
 
-        // 投稿の基本情報を取得（キャッシュされている可能性が高い）
-        const post = await tx.post.findUniqueOrThrow({
+        // 投稿の基本情報を取得
+        const updatedPost = await tx.post.findUniqueOrThrow({
           where: { id: input.postId },
           select: {
             id: true,
@@ -238,7 +291,7 @@ export const postRouter = createTRPCRouter({
         });
 
         return {
-          ...post,
+          ...updatedPost,
           stamps,
         };
       });

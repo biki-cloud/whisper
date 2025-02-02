@@ -5,18 +5,44 @@ import { Button } from "~/components/ui/button";
 import { env } from "~/env";
 import { useToast } from "~/hooks/use-toast";
 import { Bell, BellRing, Send } from "lucide-react";
+import { api } from "~/trpc/react";
 
 const PUSH_NOTIFICATION_STORAGE_KEY = "push-notification-status";
 const PUSH_SUBSCRIPTION_STORAGE_KEY = "push-subscription";
 
 export function NotificationButton() {
+  const { toast } = useToast();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(
     null,
   );
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const { toast } = useToast();
+
+  const { mutate: savePushSubscription } =
+    api.notification.savePushSubscription.useMutation({
+      onSuccess: () => {
+        console.log("Push通知の購読情報を保存しました");
+      },
+      onError: (error) => {
+        console.error("Push通知の購読情報の保存に失敗しました:", error);
+        toast({
+          title: "エラー",
+          description: "通知の設定に失敗しました",
+          variant: "destructive",
+        });
+      },
+    });
+
+  const { mutate: deletePushSubscription } =
+    api.notification.deletePushSubscription.useMutation({
+      onSuccess: () => {
+        console.log("Push通知の購読情報を削除しました");
+      },
+      onError: (error) => {
+        console.error("Push通知の購読情報の削除に失敗しました:", error);
+      },
+    });
 
   useEffect(() => {
     let isMounted = true;
@@ -40,25 +66,24 @@ export function NotificationButton() {
 
         if (storedStatus === "true" && storedSubscription) {
           const parsedSubscription = JSON.parse(storedSubscription);
-          // PushSubscriptionの型チェックと再構築
           if (
             parsedSubscription &&
             typeof parsedSubscription === "object" &&
             "endpoint" in parsedSubscription
           ) {
             try {
-              // Service Workerの登録を確認
               const registration = await navigator.serviceWorker.ready;
-              // 既存の購読を確認
               const existingSubscription =
                 await registration.pushManager.getSubscription();
 
               if (existingSubscription) {
-                // 既存の購読が有効な場合はそれを使用
                 setSubscription(existingSubscription);
                 setIsSubscribed(true);
+                // データベースに保存
+                savePushSubscription({
+                  subscription: JSON.stringify(existingSubscription),
+                });
               } else {
-                // 既存の購読が無効な場合は新しく購読
                 const newSubscription =
                   await registration.pushManager.subscribe({
                     userVisibleOnly: true,
@@ -66,10 +91,13 @@ export function NotificationButton() {
                   });
                 setSubscription(newSubscription);
                 setIsSubscribed(true);
+                // データベースに保存
+                savePushSubscription({
+                  subscription: JSON.stringify(newSubscription),
+                });
               }
             } catch (error) {
               console.error("購読の再構築に失敗しました:", error);
-              // エラーが発生した場合は状態をリセット
               localStorage.removeItem(PUSH_NOTIFICATION_STORAGE_KEY);
               localStorage.removeItem(PUSH_SUBSCRIPTION_STORAGE_KEY);
               setIsSubscribed(false);
@@ -77,7 +105,6 @@ export function NotificationButton() {
             }
           }
         }
-
         setIsLoading(false);
       } catch (error) {
         console.error("通知の初期化中にエラーが発生しました:", error);
@@ -90,9 +117,8 @@ export function NotificationButton() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [savePushSubscription]);
 
-  // 購読状態が変更されたときにローカルストレージを更新
   useEffect(() => {
     if (isSubscribed && subscription) {
       localStorage.setItem(PUSH_NOTIFICATION_STORAGE_KEY, "true");
@@ -109,10 +135,8 @@ export function NotificationButton() {
   const handleSubscribe = async () => {
     try {
       setIsLoading(true);
-      // サービスワーカーの登録
       const registration = await navigator.serviceWorker.ready;
 
-      // 通知の許可を要求
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         toast({
@@ -123,7 +147,6 @@ export function NotificationButton() {
         return;
       }
 
-      // プッシュ通知の購読
       const newSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
@@ -131,6 +154,12 @@ export function NotificationButton() {
 
       setSubscription(newSubscription);
       setIsSubscribed(true);
+
+      // データベースに保存
+      savePushSubscription({
+        subscription: JSON.stringify(newSubscription),
+      });
+
       toast({
         title: "プッシュ通知を設定しました",
         description: "テスト通知を送信できます",
@@ -154,6 +183,8 @@ export function NotificationButton() {
       setIsLoading(true);
       if (subscription) {
         await subscription.unsubscribe();
+        // データベースから削除
+        deletePushSubscription();
       }
       setSubscription(null);
       setIsSubscribed(false);
