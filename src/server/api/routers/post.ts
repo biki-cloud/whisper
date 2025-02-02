@@ -5,6 +5,7 @@ import { type Prisma } from "@prisma/client";
 import webPush from "web-push";
 import { env } from "~/env";
 import { getLogger } from "~/lib/logger/server";
+import { type PushSubscription } from "web-push";
 
 const logger = getLogger("PostRouter");
 
@@ -246,7 +247,7 @@ export const postRouter = createTRPCRouter({
                 logger.info("Push通知を送信します");
                 // Push通知を送信
                 await webPush.sendNotification(
-                  JSON.parse(pushSubscription.subscription),
+                  JSON.parse(pushSubscription.subscription) as PushSubscription,
                   JSON.stringify({
                     title: "新しいスタンプ",
                     body: "あなたの投稿にスタンプが押されました！",
