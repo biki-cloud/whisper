@@ -14,7 +14,16 @@ const mockTrpcClient = mockTrpc.createClient({
   links: [
     httpBatchLink({
       url: "http://localhost:3000/api/trpc",
-      transformer: superjson,
+      transformer: {
+        input: {
+          serialize: (obj: unknown) => obj,
+          deserialize: (obj: unknown) => obj,
+        },
+        output: {
+          serialize: (obj: unknown) => obj,
+          deserialize: (obj: unknown) => obj,
+        },
+      },
     }),
   ],
 });
@@ -85,6 +94,22 @@ export const mockTrpcQueries = {
   },
   stamp: {
     toggle: {
+      useMutation: () => ({
+        mutate: jest.fn(),
+        isLoading: false,
+        error: null,
+      }),
+    },
+  },
+  notification: {
+    savePushSubscription: {
+      useMutation: () => ({
+        mutate: jest.fn(),
+        isLoading: false,
+        error: null,
+      }),
+    },
+    sendTestNotification: {
       useMutation: () => ({
         mutate: jest.fn(),
         isLoading: false,

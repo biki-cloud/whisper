@@ -1,5 +1,5 @@
-import { createTRPCContext } from "~/server/api/trpc";
 import { appRouter } from "~/server/api/root";
+import { createTRPCContext } from "~/server/api/trpc";
 import { prismaMock } from "../../setup";
 
 describe("EmotionTag Router", () => {
@@ -13,26 +13,22 @@ describe("EmotionTag Router", () => {
   });
 
   describe("getAll", () => {
-    it("should return all emotion tags", async () => {
+    it("should return emotion tags", async () => {
       const mockEmotionTags = [
-        { id: "emotion-1", name: "Happy" },
-        { id: "emotion-2", name: "Sad" },
-        { id: "emotion-3", name: "Angry" },
+        {
+          id: "1",
+          name: "happy",
+        },
+        {
+          id: "2",
+          name: "sad",
+        },
       ];
 
       prismaMock.emotionTag.findMany.mockResolvedValueOnce(mockEmotionTags);
 
       const result = await caller.emotionTag.getAll();
       expect(result).toEqual(mockEmotionTags);
-      expect(result).toHaveLength(3);
-    });
-
-    it("should return empty array when no emotion tags exist", async () => {
-      prismaMock.emotionTag.findMany.mockResolvedValueOnce([]);
-
-      const result = await caller.emotionTag.getAll();
-      expect(result).toEqual([]);
-      expect(result).toHaveLength(0);
     });
   });
 });

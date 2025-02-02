@@ -135,6 +135,16 @@ export function NotificationButton() {
   const handleSubscribe = async () => {
     try {
       setIsLoading(true);
+
+      if (!("serviceWorker" in navigator) || !navigator.serviceWorker) {
+        toast({
+          title: "エラー",
+          description: "このブラウザはプッシュ通知に対応していません",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const registration = await navigator.serviceWorker.ready;
 
       const permission = await Notification.requestPermission();
@@ -170,7 +180,7 @@ export function NotificationButton() {
       }
       toast({
         title: "エラー",
-        description: "プッシュ通知の設定に失敗しました",
+        description: "通知の設定に失敗しました",
         variant: "destructive",
       });
     } finally {

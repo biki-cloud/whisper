@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, waitFor, act } from "~/utils/test-utils";
+import {
+  renderWithProviders,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "~/utils/test-utils";
 import { NotificationButton } from "~/components/NotificationButton";
 
 // env.jsのモック
@@ -61,7 +67,7 @@ describe("NotificationButton", () => {
   });
 
   it("初期状態で通知オフボタンが表示される", () => {
-    render(<NotificationButton />);
+    renderWithProviders(<NotificationButton />);
     expect(screen.getByText("通知オフ")).toBeInTheDocument();
   });
 
@@ -72,7 +78,7 @@ describe("NotificationButton", () => {
       );
     });
 
-    render(<NotificationButton />);
+    renderWithProviders(<NotificationButton />);
 
     const subscribeButton = screen.getByText("通知オフ");
     await act(async () => {
@@ -92,7 +98,7 @@ describe("NotificationButton", () => {
       );
     });
 
-    render(<NotificationButton />);
+    renderWithProviders(<NotificationButton />);
 
     // 通知をオンにする
     const subscribeButton = screen.getByText("通知オフ");
@@ -123,7 +129,7 @@ describe("NotificationButton", () => {
       );
     });
 
-    render(<NotificationButton />);
+    renderWithProviders(<NotificationButton />);
 
     // 通知をオンにする
     const subscribeButton = screen.getByText("通知オフ");
@@ -154,6 +160,66 @@ describe("NotificationButton", () => {
           url: "/",
         },
       }),
+    });
+  });
+
+  it("通知権限が拒否されている場合、エラーメッセージが表示される", async () => {
+    Object.defineProperty(window, "Notification", {
+      value: {
+        requestPermission: jest.fn().mockResolvedValue("denied"),
+        permission: "denied",
+      },
+      writable: true,
+    });
+
+    renderWithProviders(<NotificationButton />);
+
+    const subscribeButton = screen.getByText("通知オフ");
+    await act(async () => {
+      await fireEvent.click(subscribeButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("通知の許可が必要です")).toBeInTheDocument();
+    });
+  });
+
+  it("Service Workerが利用できない場合、エラーメッセージが表示される", async () => {
+    Object.defineProperty(window.navigator, "serviceWorker", {
+      value: undefined,
+      writable: true,
+    });
+
+    renderWithProviders(<NotificationButton />);
+
+    const subscribeButton = screen.getByText("通知オフ");
+    await act(async () => {
+      await fireEvent.click(subscribeButton);
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("このブラウザはプッシュ通知に対応していません"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("通知の購読に失敗した場合、エラーメッセージが表示される", async () => {
+    await mockServiceWorker.ready.then((registration) => {
+      registration.pushManager.subscribe.mockRejectedValueOnce(
+        new Error("Subscription failed"),
+      );
+    });
+
+    renderWithProviders(<NotificationButton />);
+
+    const subscribeButton = screen.getByText("通知オフ");
+    await act(async () => {
+      await fireEvent.click(subscribeButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("通知の設定に失敗しました")).toBeInTheDocument();
     });
   });
 });

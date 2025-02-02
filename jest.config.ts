@@ -19,12 +19,15 @@ const config: Config = {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^~/(.*)$": "<rootDir>/src/$1",
     "^superjson$": "identity-obj-proxy",
+    "^uuid$": require.resolve("uuid"),
+    "^@t3-oss/env-nextjs$": require.resolve("@t3-oss/env-nextjs"),
+    "^@t3-oss/env-core$": require.resolve("@t3-oss/env-core"),
   },
   // セットアップファイルを指定
   setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
   // ESModulesの設定
   transformIgnorePatterns: [
-    "node_modules/(?!(@trpc|superjson|lucide-react|@radix-ui|@babel|@floating-ui|framer-motion|@emoji-mart)/)",
+    "node_modules/(?!(@trpc|superjson|lucide-react|@radix-ui|@babel|@floating-ui|framer-motion|@emoji-mart|@t3-oss|uuid|@t3-oss/env-core|@t3-oss/env-nextjs)/)",
   ],
   transform: {
     "^.+\\.(t|j)sx?$": [
@@ -42,27 +45,14 @@ const config: Config = {
             decorators: true,
           },
           target: "es2020",
-        },
-        module: {
-          type: "commonjs",
-          noInterop: false,
-        },
-      },
-    ],
-    "^.+\\.m?js$": [
-      "@swc/jest",
-      {
-        jsc: {
-          parser: {
-            syntax: "ecmascript",
-            jsx: false,
+          experimental: {
+            plugins: [["@swc/plugin-transform-imports", {}]],
           },
-          transform: null,
-          target: "es2020",
         },
         module: {
           type: "commonjs",
           noInterop: false,
+          strictMode: true,
         },
       },
     ],
