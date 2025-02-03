@@ -251,7 +251,7 @@ export const postRouter = createTRPCRouter({
                   JSON.stringify({
                     title: "新しいスタンプ",
                     body: "あなたの投稿にスタンプが押されました！",
-                    url: `/post/${input.postId}`,
+                    url: "/posts",
                   }),
                 );
               } catch (error) {
