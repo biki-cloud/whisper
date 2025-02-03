@@ -333,7 +333,3 @@ TODO
 今は匿名IDですが、将来的にuser, emai, passwordを使用する形になるので今のうちにuserテーブルを作成しておいた方が良いと思うのですがどう思いますか？
 StampやdeletedPostなどはuserIdとanonmousIDの二つを管理するのは難しいので、そちらは統一してuserIdで、userテーブルでanonmousIDとuserIDを管理し、うまいこと管理できますか？
 それともStampやdeletedPost等でuserIdとanonmousIDの二つを管理することが望ましいでしょうか？
-
-- スマホでページ開いた時は通知来ない気がするので何かロードする必要がある？
-  - 次の日は行けるかな？
-- スマホで通知を開くとnot foundエラーになるので修正
