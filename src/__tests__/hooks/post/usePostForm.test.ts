@@ -65,7 +65,7 @@ describe("usePostForm", () => {
       emotionTagId: EMOTION_TAGS[0].name,
     });
     expect(mockPostApi.invalidateQueries).toHaveBeenCalled();
-    expect(mockRouter.push).toHaveBeenCalledWith("/");
+    expect(mockRouter.push).toHaveBeenCalledWith("/posts");
     expect(result.current.content).toBe("");
     expect(result.current.emotionTagId).toBe("");
   });

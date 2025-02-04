@@ -41,7 +41,7 @@ export function usePostForm(deps: PostFormDeps) {
       });
       await deps.postApi.invalidateQueries();
       resetForm();
-      deps.router.push("/");
+      deps.router.push("/posts");
     } catch (error) {
       setError(error instanceof Error ? error.message : "投稿に失敗しました");
     } finally {

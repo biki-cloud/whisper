@@ -3,9 +3,6 @@ import { createTRPCContext } from "~/server/api/trpc";
 import { appRouter, type AppRouter } from "~/server/api/root";
 import { prismaMock } from "../../setup";
 import { TRPCError } from "@trpc/server";
-import { createInnerTRPCContext } from "~/server/api/trpc";
-import { prisma } from "~/server/db";
-import webPush from "web-push";
 
 describe("Post Router", () => {
   const anonymousId = "test-anonymous-id";

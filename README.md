@@ -328,5 +328,8 @@ pnpm prisma migrate reset --force --skip-seed --env-file .env.prd
 
 TODO
 
-- 「通知をオフ」通知を受け取るボタンを設定する。受け取るボタンを設定すると、ボタンは受け取り設定済みと表示させて。「通知をオフ」. おしゃれにして
 - post/{postId}を参照し、投稿詳細画面を表示させるように実装
+
+今は匿名IDですが、将来的にuser, emai, passwordを使用する形になるので今のうちにuserテーブルを作成しておいた方が良いと思うのですがどう思いますか？
+StampやdeletedPostなどはuserIdとanonmousIDの二つを管理するのは難しいので、そちらは統一してuserIdで、userテーブルでanonmousIDとuserIDを管理し、うまいこと管理できますか？
+それともStampやdeletedPost等でuserIdとanonmousIDの二つを管理することが望ましいでしょうか？
