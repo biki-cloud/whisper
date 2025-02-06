@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Trash2, Clock, Smile, Shield } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -8,6 +8,7 @@ import {
 } from "~/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import VentLogo from "~/components/VentLogo";
 
 export default function Home() {
   return (
@@ -16,91 +17,106 @@ export default function Home() {
         <Card className="mb-12 border-none bg-background/60 shadow-lg backdrop-blur">
           <CardHeader className="space-y-4">
             <div className="flex items-center justify-center space-x-2">
-              <Sparkles className="h-8 w-8 text-primary" />
+              <VentLogo width={40} height={40} className="shrink-0" />
               <CardTitle className="bg-gradient-to-r from-primary to-primary-foreground bg-clip-text text-4xl font-bold text-transparent">
                 Ventへようこそ
               </CardTitle>
             </div>
-            <p className="text-center text-muted-foreground">
-              あなたの想いを、自由に。安全に。
+            <p className="text-center text-lg text-muted-foreground">
+              完全匿名で、あなたの心を解放する場所
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              心理学的に、感情を吐き出すことでストレスが軽減します
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="about" className="border-b border-muted">
-                <AccordionTrigger className="text-lg font-medium hover:text-primary">
-                  Ventって何ができるの？
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  <p className="leading-relaxed">
-                    Ventは、誰でも気軽に想いを共有できる特別な場所です。
-                    名前を明かさずに、今の気持ちや考えていることを自由に投稿できます。
-                    ちょっとした独り言から深い思考まで、あなたの「つぶやき」をお待ちしています。
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="border-none bg-primary/5">
+                <CardContent className="flex flex-col items-center gap-2 p-4">
+                  <Shield className="h-8 w-8 text-primary" />
+                  <h3 className="text-lg font-semibold">完全匿名</h3>
+                  <p className="text-center text-sm text-muted-foreground">
+                    登録不要で、誰にも特定されません
                   </p>
-                </AccordionContent>
-              </AccordionItem>
+                </CardContent>
+              </Card>
+              <Card className="border-none bg-primary/5">
+                <CardContent className="flex flex-col items-center gap-2 p-4">
+                  <Clock className="h-8 w-8 text-primary" />
+                  <h3 className="text-lg font-semibold">1日1回投稿</h3>
+                  <p className="text-center text-sm text-muted-foreground">
+                    その日の想いを大切に
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-none bg-primary/5">
+                <CardContent className="flex flex-col items-center gap-2 p-4">
+                  <Trash2 className="h-8 w-8 text-primary" />
+                  <h3 className="text-lg font-semibold">24時間で消去</h3>
+                  <p className="text-center text-sm text-muted-foreground">
+                    翌日には自動で削除されます
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-none bg-primary/5">
+                <CardContent className="flex flex-col items-center gap-2 p-4">
+                  <Smile className="h-8 w-8 text-primary" />
+                  <h3 className="text-lg font-semibold">スタンプ反応</h3>
+                  <p className="text-center text-sm text-muted-foreground">
+                    共感はスタンプで表現
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
 
-              <AccordionItem value="features" className="border-b border-muted">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="install" className="border-b border-muted">
                 <AccordionTrigger className="text-lg font-medium hover:text-primary">
-                  Ventの特徴
+                  ホーム画面にアプリとして追加する方法
                 </AccordionTrigger>
                 <AccordionContent>
-                  <ul className="grid gap-3 text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                      名前や登録なしで、すぐに投稿できます
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                      投稿はリアルタイムで表示されるので、会話が生まれやすい
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                      スマートフォンでもパソコンでも見やすい画面
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                      サクサク快適に動作
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                      安心して使える堅牢なシステム
-                    </li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="usage">
-                <AccordionTrigger className="text-lg font-medium hover:text-primary">
-                  使ってみよう！
-                </AccordionTrigger>
-                <AccordionContent>
-                  <ol className="grid gap-3 text-muted-foreground">
-                    <li className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                        1
-                      </span>
-                      下のテキストボックスに、今の気持ちや考えを入力
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                        2
-                      </span>
-                      「投稿する」ボタンを押すだけ！
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                        3
-                      </span>
-                      あなたの想いは、すぐに他の人と共有されます
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                        4
-                      </span>
-                      みんなの投稿を見て、共感したり、新しい発見を見つけたり...
-                    </li>
-                  </ol>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <h4 className="font-medium">iPhoneの場合:</h4>
+                      <ol className="grid gap-2 text-sm text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                            1
+                          </span>
+                          Safari/Chromeでサイトを開く
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                            2
+                          </span>
+                          共有ボタンをタップ
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                            3
+                          </span>
+                          「ホーム画面に追加」を選択
+                        </li>
+                      </ol>
+                    </div>
+                    <div className="space-y-3">
+                      <h4 className="font-medium">Androidの場合:</h4>
+                      <ol className="grid gap-2 text-sm text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                            1
+                          </span>
+                          Chrome/Safariでサイトを開く
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                            2
+                          </span>
+                          メニューから「ホーム画面に追加」を選択
+                        </li>
+                      </ol>
+                    </div>
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

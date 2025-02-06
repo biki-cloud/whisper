@@ -28,7 +28,7 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon512_rounded.png"></link>
-        <meta name="theme-color" content="#b8e986" />
+        <meta name="theme-color" content="#4F46E5" />
       </head>
       <body className={`font-sans ${inter.variable}`}>
         <TRPCReactProvider>
