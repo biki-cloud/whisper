@@ -8,6 +8,7 @@ import {
 } from "~/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import VentLogo from "~/components/VentLogo";
 
 export default function Home() {
   return (
@@ -16,7 +17,7 @@ export default function Home() {
         <Card className="mb-12 border-none bg-background/60 shadow-lg backdrop-blur">
           <CardHeader className="space-y-4">
             <div className="flex items-center justify-center space-x-2">
-              <Sparkles className="h-8 w-8 text-primary" />
+              <VentLogo width={40} height={40} className="shrink-0" />
               <CardTitle className="bg-gradient-to-r from-primary to-primary-foreground bg-clip-text text-4xl font-bold text-transparent">
                 Ventへようこそ
               </CardTitle>
