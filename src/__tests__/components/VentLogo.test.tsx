@@ -7,8 +7,8 @@ describe("VentLogo", () => {
     const svg = container.querySelector("svg");
 
     expect(svg).toBeInTheDocument();
-    expect(svg).toHaveAttribute("width", "200");
-    expect(svg).toHaveAttribute("height", "100");
+    expect(svg).toHaveAttribute("width", "32");
+    expect(svg).toHaveAttribute("height", "32");
   });
 
   it("カスタムサイズでレンダリングされる", () => {
@@ -26,20 +26,14 @@ describe("VentLogo", () => {
     // グラデーションの定義
     expect(container.querySelector("linearGradient")).toBeInTheDocument();
 
-    // 波形のパス
-    const wavePath = container.querySelector("path[stroke='url(#gradient)']");
-    expect(wavePath).toBeInTheDocument();
-    expect(wavePath).toHaveAttribute("stroke-width", "30");
+    // 背景の矩形
+    const rect = container.querySelector("rect");
+    expect(rect).toBeInTheDocument();
+    expect(rect).toHaveAttribute("fill", "url(#gradient)");
 
     // Vの文字のパス
-    const vPath = container.querySelector("path[stroke='#87CEEB']");
+    const vPath = container.querySelector("path");
     expect(vPath).toBeInTheDocument();
-    expect(vPath).toHaveAttribute("stroke-width", "12");
-
-    // entの文字
-    const text = container.querySelector("text");
-    expect(text).toBeInTheDocument();
-    expect(text).toHaveAttribute("fill", "#87CEEB");
-    expect(text).toHaveTextContent("ent");
+    expect(vPath).toHaveAttribute("fill", "white");
   });
 });
