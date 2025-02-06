@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "~/lib/utils";
 import { motion } from "framer-motion";
-import { Home, MessageCircle, PenSquare, Wind, UserCircle } from "lucide-react";
+import { Home, MessageCircle, PenSquare, UserCircle } from "lucide-react";
+import VentLogo from "~/components/VentLogo";
 
 const navigation = [
   { name: "ホーム", href: "/", icon: Home },
@@ -25,7 +26,11 @@ export function Navbar() {
               href="/"
               className="group flex items-center gap-1.5 text-xl font-bold tracking-tight"
             >
-              <Wind className="h-5 w-5 text-primary transition-transform group-hover:rotate-12" />
+              <VentLogo
+                width={24}
+                height={24}
+                className="transition-transform group-hover:rotate-12"
+              />
               <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent transition-all duration-300 ease-in-out group-hover:tracking-wider">
                 Vent
               </span>
