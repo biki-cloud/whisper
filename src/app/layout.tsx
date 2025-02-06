@@ -15,12 +15,7 @@ const inter = Inter({
 export const metadata = {
   title: "Vent - 想いを綴る場所",
   description: "今日の想いを共有しよう",
-  icons: [
-    { rel: "icon", url: "/favicon.ico" },
-    { rel: "apple-touch-icon", url: "/icon512_rounded.png" },
-  ],
-  manifest: "/manifest.json",
-  themeColor: "#4F46E5",
+  icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
 export default function RootLayout({
